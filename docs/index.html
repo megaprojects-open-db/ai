@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mega Projects Open Database</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css">
+<style>
+  :root {
+    --bg: #fafafa; --card: #ffffff; --border: #e5e5e5;
+    --text: #1a1a1a; --muted: #666; --accent: #0066cc;
+    --good: #15803d; --bad: #b91c1c; --warn: #b45309;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { margin: 0 0 4px 0; font-size: 28px; font-weight: 600; }
+  .tagline { color: var(--muted); font-size: 14px; margin: 0; }
+  .last-updated { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .metric { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .metric-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .metric-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .chart-card h2 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .chart-card canvas { width: 100% !important; height: 260px !important; }
+  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .table-card h2 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+  .loading, .error { text-align: center; padding: 48px; color: var(--muted); }
+  .error { color: var(--bad); }
+  .gridjs-container { font-size: 13px; }
+  .gridjs-th, .gridjs-td { padding: 8px 10px; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; background: #f0f0f0; color: #444; }
+  .pill-overrun-high { background: #fee; color: var(--bad); }
+  .pill-overrun-mid { background: #fef3c7; color: var(--warn); }
+  .pill-overrun-low { background: #dcfce7; color: var(--good); }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Mega Projects Open Database</h1>
+      <p class="tagline">Cost and schedule performance of large infrastructure, energy, and industrial projects.</p>
+      <p class="last-updated" id="last-updated">Loading…</p>
+    </header>
+    <div id="content"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js"></script>
+  <script>
+    const CSV_URL = '../data/master.csv';
+    const content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">Loading project data…</div>';
+
+    fetch(CSV_URL)
+      .then(r => { if (!r.ok) throw new Error('CSV fetch failed: ' + r.status); return r.text(); })
+      .then(text => {
+        const parsed = Papa.parse(text, { header: true, dynamicTyping: false, skipEmptyLines: true });
+        const rows = parsed.data.filter(r => r['Project Name']);
+        render(rows);
+      })
+      .catch(err => {
+        content.innerHTML = '<div class="error">Failed to load data: ' + err.message + '<br><br>If you\\'re viewing this locally, you may need to run a local web server (browsers block fetch() on file://).</div>';
+      });
+
+    function num(v) {
+      if (v === '' || v == null) return null;
+      const n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    }
+
+    function render(rows) {
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('last-updated').textContent =
+        'Last refreshed ' + today + ' · ' + rows.length + ' projects · data: master.csv';
+
+      const total = rows.length;
+      const withFid = rows.filter(r => num(r['FID Cost (when Approved)']) != null);
+      const withFinal = rows.filter(r => num(r['Final Cost']) != null);
+      const totalFidCommitted = withFid.reduce((s, r) => s + num(r['FID Cost (when Approved)']), 0);
+
+      const overruns = rows.map(r => {
+        const fid = num(r['FID Cost (when Approved)']);
+        const fin = num(r['Final Cost']);
+        if (fid == null || fin == null || fid <= 0) return null;
+        return { name: r['Project Name'], country: r.Country, type: r.Type, fid, fin, pct: (fin - fid) / fid * 100 };
+      }).filter(Boolean);
+      const avgOverrunPct = overruns.length ? overruns.reduce((s, o) => s + o.pct, 0) / overruns.length : 0;
+
+      const completedRecent = rows.filter(r => {
+        const y = parseInt(r['Actual ISD Year']);
+        return y >= 2025 && y <= 2026;
+      }).length;
+
+      let html = '';
+      html += '<div class="metrics">';
+      html += '<div class="metric"><div class="metric-label">Projects tracked</div><div class="metric-value">' + total + '</div><div class="metric-sub">' + withFinal.length + ' have final cost data</div></div>';
+      html += '<div class="metric"><div class="metric-label">Total FID-approved</div><div class="metric-value">' + totalFidCommitted.toFixed(0) + 'B</div><div class="metric-sub">across ' + withFid.length + ' projects, mixed CAD/USD</div></div>';
+      html += '<div class="metric"><div class="metric-label">Avg cost overrun</div><div class="metric-value" style="color: var(--bad)">' + (avgOverrunPct >= 0 ? '+' : '') + avgOverrunPct.toFixed(1) + '%</div><div class="metric-sub">final vs FID, ' + overruns.length + ' projects</div></div>';
+      html += '<div class="metric"><div class="metric-label">Completed 2025–26</div><div class="metric-value">' + completedRecent + '</div><div class="metric-sub">in active research window</div></div>';
+      html += '</div>';
+
+      html += '<div class="charts">';
+      html += '<div class="chart-card"><h2>Top cost overruns</h2><canvas id="chart-overrun"></canvas></div>';
+      html += '<div class="chart-card"><h2>Projects by country</h2><canvas id="chart-country"></canvas></div>';
+      html += '<div class="chart-card"><h2>Projects by type</h2><canvas id="chart-type"></canvas></div>';
+      html += '<div class="chart-card"><h2>Completed by year</h2><canvas id="chart-year"></canvas></div>';
+      html += '</div>';
+      html += '<div class="table-card"><h2>All projects</h2><div id="grid"></div></div>';
+      html += '<div class="footer">Data: <a href="../data/master.csv">master.csv</a> · Source: <a href="https://github.com/megaprojects-open-db/ai">github.com/megaprojects-open-db/ai</a> · License: data CC BY 4.0, code MIT</div>';
+      content.innerHTML = html;
+
+      const top = [...overruns].sort((a, b) => b.pct - a.pct).slice(0, 10);
+      new Chart(document.getElementById('chart-overrun'), {
+        type: 'bar',
+        data: { labels: top.map(o => trunc(o.name, 28)), datasets: [{ label: 'Overrun %', data: top.map(o => o.pct), backgroundColor: top.map(o => o.pct > 50 ? '#dc2626' : o.pct > 20 ? '#f59e0b' : '#10b981') }] },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => v + '%' } } } }
+      });
+
+      const byCountry = groupCount(rows, 'Country');
+      new Chart(document.getElementById('chart-country'), {
+        type: 'doughnut',
+        data: { labels: Object.keys(byCountry), datasets: [{ data: Object.values(byCountry), backgroundColor: ['#0066cc', '#dc2626', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] }] },
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+
+      const byType = groupCount(rows, 'Type');
+      new Chart(document.getElementById('chart-type'), {
+        type: 'doughnut',
+        data: { labels: Object.keys(byType), datasets: [{ data: Object.values(byType), backgroundColor: ['#0066cc', '#dc2626', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] }] },
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+
+      const byYear = {};
+      rows.forEach(r => { const y = r['Actual ISD Year']; if (!y) return; const k = String(y).slice(0, 4); byYear[k] = (byYear[k] || 0) + 1; });
+      const years = Object.keys(byYear).sort();
+      new Chart(document.getElementById('chart-year'), {
+        type: 'bar',
+        data: { labels: years, datasets: [{ label: 'Completions', data: years.map(y => byYear[y]), backgroundColor: '#0066cc' }] },
+        options: { plugins: { legend: { display: false } } }
+      });
+
+      const tableData = rows.map(r => {
+        const fid = num(r['FID Cost (when Approved)']);
+        const fin = num(r['Final Cost']);
+        const pct = (fid && fin && fid > 0) ? ((fin - fid) / fid * 100) : null;
+        return [
+          r['Project Name'] || '', r['Type'] || '', r['Sub Type'] || '',
+          r['Country'] || '', r['Actual ISD Year'] || '',
+          fid != null ? fid.toFixed(2) : '', fin != null ? fin.toFixed(2) : '',
+          pct != null ? pct.toFixed(1) : '', r['Source'] || ''
+        ];
+      });
+
+      new gridjs.Grid({
+        columns: [
+          { name: 'Project', width: '300px' },
+          { name: 'Type', width: '110px' },
+          { name: 'Sub Type', width: '140px' },
+          { name: 'Country', width: '90px' },
+          { name: 'In-Service', width: '90px' },
+          { name: 'FID Cost ($B)', width: '90px' },
+          { name: 'Final ($B)', width: '90px' },
+          { name: 'Overrun %', width: '90px',
+            formatter: cell => {
+              if (cell === '') return '';
+              const n = parseFloat(cell);
+              const cls = n > 50 ? 'pill-overrun-high' : n > 20 ? 'pill-overrun-mid' : 'pill-overrun-low';
+              return gridjs.html('<span class="pill ' + cls + '">' + (n >= 0 ? '+' : '') + n.toFixed(1) + '%</span>');
+            } },
+          { name: 'Source', width: '80px',
+            formatter: cell => cell ? gridjs.html('<a href="' + cell + '" target="_blank" rel="noopener">link</a>') : '' }
+        ],
+        data: tableData,
+        sort: true, search: true,
+        pagination: { enabled: true, limit: 25 }
+      }).render(document.getElementById('grid'));
+    }
+
+    function groupCount(rows, key) {
+      const out = {};
+      rows.forEach(r => { const v = (r[key] || '(unspecified)').trim(); out[v] = (out[v] || 0) + 1; });
+      return Object.fromEntries(Object.entries(out).sort((a, b) => b[1] - a[1]));
+    }
+    function trunc(s, n) { return s && s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  </script>
+</body>
+</html>
