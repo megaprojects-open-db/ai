@@ -8,71 +8,83 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css">
 <style>
   :root {
-    --bg: #f7f7f5;
-    --card: #ffffff;
-    --border: #e5e5e0;
-    --border-strong: #d1d1ca;
-    --text: #1a1a1a;
-    --text-muted: #5b5b58;
-    --muted: #777;
-    --accent: #1f4e79;
-    --accent-hover: #163a5d;
-    --accent-light: #e8f0f9;
-    --good: #15803d;
-    --bad: #b91c1c;
-    --warn: #b45309;
-    --type-generation: #1f4e79;
-    --type-transmission: #6b4f8f;
-    --type-transportation: #d97706;
-    --type-industrial: #15803d;
-    --type-other: #64748b;
+    --bg: #f7f7f5; --card: #ffffff; --border: #e5e5e0; --border-strong: #d1d1ca;
+    --text: #1a1a1a; --text-muted: #5b5b58; --muted: #777;
+    --accent: #1f4e79; --accent-hover: #163a5d; --accent-light: #e8f0f9;
+    --good: #15803d; --bad: #b91c1c; --warn: #b45309;
+    --type-generation: #1f4e79; --type-transmission: #6b4f8f;
+    --type-transportation: #d97706; --type-industrial: #15803d; --type-other: #64748b;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; -webkit-font-smoothing: antialiased; }
   .container { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
-  header { margin-bottom: 20px; }
-  h1 { margin: 0 0 6px 0; font-size: 30px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); }
+  header { margin-bottom: 18px; }
+  h1 { margin: 0 0 6px 0; font-size: 30px; font-weight: 600; letter-spacing: -0.5px; }
   .tagline { color: var(--text-muted); font-size: 15px; margin: 0; max-width: 720px; }
   .last-updated { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+  /* Filters */
+  .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+  .filters label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-right: 2px; }
+  .filters select { padding: 6px 28px 6px 10px; border: 1px solid var(--border-strong); border-radius: 6px; background: #fff; font-size: 13px; color: var(--text); font-family: inherit; cursor: pointer; min-width: 140px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235b5b58' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+  .filters select:focus { outline: 2px solid var(--accent-light); border-color: var(--accent); }
+  .filters .filter-clear { padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 6px; background: #fff; font-size: 12px; color: var(--text-muted); cursor: pointer; font-family: inherit; }
+  .filters .filter-clear:hover { background: var(--bg); color: var(--text); }
+  .filter-chips { font-size: 13px; margin-bottom: 18px; min-height: 24px; color: var(--text-muted); }
+  .chip { display: inline-flex; align-items: center; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--accent-light); color: var(--accent); font-size: 12px; font-weight: 500; margin-right: 6px; }
+  .chip button { background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 16px; padding: 0 6px; line-height: 1; font-family: inherit; }
+  .chip button:hover { color: var(--bad); }
+  .chip-count { color: var(--muted); margin-left: 8px; font-weight: normal; }
+
+  /* Tabs */
   .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-strong); margin-bottom: 24px; overflow-x: auto; }
   .tabs button { background: transparent; border: none; padding: 12px 18px; font-size: 14px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; font-family: inherit; }
   .tabs button:hover { color: var(--accent); }
   .tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
+
+  /* Metrics */
   .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
   .metric { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
   .metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; }
-  .metric-value { font-size: 28px; font-weight: 600; margin-top: 6px; color: var(--text); }
+  .metric-value { font-size: 28px; font-weight: 600; margin-top: 6px; }
   .metric-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* Charts */
   .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; }
   .chart-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
   .chart-card canvas { width: 100% !important; height: 280px !important; }
-  .gantt-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
-  .gantt-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  /* Doughnut: force square via aspect-ratio, centered, capped width so it looks clean on wide screens */
+  .chart-card.donut .canvas-wrap { max-width: 280px; margin: 0 auto; width: 100%; aspect-ratio: 1 / 1; position: relative; cursor: pointer; }
+  .chart-card.donut canvas { width: 100% !important; height: 100% !important; }
+  .chart-card .filter-hint { font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center; font-style: italic; }
+
+  .gantt-card, .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+  .gantt-card h2, .table-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
   .gantt-wrapper { position: relative; height: 720px; overflow-y: auto; }
   .gantt-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 12px; color: var(--text-muted); }
   .gantt-legend-item { display: flex; align-items: center; gap: 6px; }
   .gantt-legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
-  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
-  .table-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+
   .about-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
   @media (max-width: 768px) { .about-grid { grid-template-columns: 1fr; } }
   .about-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 22px; }
-  .about-card h2 { margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: var(--text); }
-  .about-card h3 { margin: 18px 0 8px 0; font-size: 14px; font-weight: 600; color: var(--text); }
-  .about-card p { margin: 0 0 12px 0; color: var(--text); font-size: 14px; }
+  .about-card h2 { margin: 0 0 12px 0; font-size: 18px; font-weight: 600; }
+  .about-card h3 { margin: 18px 0 8px 0; font-size: 14px; font-weight: 600; }
+  .about-card p { margin: 0 0 12px 0; font-size: 14px; }
   .about-card a { color: var(--accent); }
   .about-card ul { padding-left: 20px; margin: 0 0 12px 0; }
   .about-card li { margin-bottom: 6px; font-size: 14px; }
   .disclaimer { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; color: #78350f; font-size: 13px; margin-bottom: 20px; }
   .disclaimer strong { color: #78350f; }
+
   .footer { margin-top: 36px; padding: 18px 0; border-top: 1px solid var(--border-strong); color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
   .footer a { color: var(--accent); text-decoration: none; }
   .footer a:hover { text-decoration: underline; }
   .footer-links { display: flex; gap: 14px; flex-wrap: wrap; }
-  .loading, .error { text-align: center; padding: 56px 20px; color: var(--text-muted); }
+  .loading, .error, .empty { text-align: center; padding: 56px 20px; color: var(--text-muted); }
   .error { color: var(--bad); }
   .gridjs-container { font-size: 13px; }
   .gridjs-th, .gridjs-td { padding: 8px 10px; }
@@ -89,18 +101,31 @@
       <p class="tagline">Cost and schedule performance of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia.</p>
       <p class="last-updated" id="last-updated">Loading data...</p>
     </header>
+
+    <div class="filters">
+      <label for="filter-country">Country</label>
+      <select id="filter-country"><option value="">All countries</option></select>
+      <label for="filter-type">Type</label>
+      <select id="filter-type"><option value="">All types</option></select>
+      <button class="filter-clear" id="filter-clear">Clear all</button>
+    </div>
+    <div class="filter-chips" id="filter-chips"></div>
+
     <nav class="tabs" id="tabs">
       <button data-tab="overview" class="active">Overview</button>
       <button data-tab="projects">Projects</button>
       <button data-tab="schedule">Schedule</button>
       <button data-tab="about">About &amp; methodology</button>
     </nav>
+
     <div id="tab-overview" class="tab-panel active">
       <div id="overview-content"><div class="loading">Loading project data...</div></div>
     </div>
+
     <div id="tab-projects" class="tab-panel">
       <div class="table-card"><h2>All projects</h2><div id="grid"></div></div>
     </div>
+
     <div id="tab-schedule" class="tab-panel">
       <div class="gantt-card">
         <h2>Construction timelines (most recent 30)</h2>
@@ -108,6 +133,7 @@
         <div class="gantt-legend" id="gantt-legend"></div>
       </div>
     </div>
+
     <div id="tab-about" class="tab-panel">
       <div class="disclaimer">
         <strong>Disclaimer.</strong> Data on this site is compiled from public sources with research assistance from large language models. It is <strong>not independently verified or audited</strong>. The purpose is information sharing and trend analysis only &mdash; do not use it for business decisions, investment analysis, or regulatory compliance.
@@ -125,9 +151,9 @@
             <li><strong>Time:</strong> projects from any era, with active research focused on recent completions</li>
           </ul>
           <h3>Methodology</h3>
-          <p>Each entry is sourced from at least one public document &mdash; government regulator filings, audit reports, project owner press releases, or major media reporting. Where possible, dates and costs are cross-checked against multiple sources. Confidence levels and source URLs are tracked per row in the underlying dataset.</p>
+          <p>Each entry is sourced from at least one public document &mdash; government regulator filings, audit reports, project owner press releases, or major media reporting. Where possible, dates and costs are cross-checked against multiple sources.</p>
           <h3>How to contribute</h3>
-          <p>Got a correction or a missing project? Open a Pull Request on the GitHub repo with the change and a primary source link in the commit message. For larger changes (new columns, schema), open an issue first.</p>
+          <p>Got a correction or a missing project? Open a Pull Request on the GitHub repo with the change and a primary source link in the commit message.</p>
         </div>
         <div class="about-card">
           <h2>More from us</h2>
@@ -138,10 +164,11 @@
             <li><a href="https://github.com/megaprojects-open-db/ai" target="_blank" rel="noopener">Source on GitHub</a></li>
           </ul>
           <h3>License</h3>
-          <p>Data: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> &mdash; attribute as "Mega Projects Open Database."<br>Code: MIT.</p>
+          <p>Data: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a><br>Code: MIT.</p>
         </div>
       </div>
     </div>
+
     <footer class="footer">
       <div>&copy; Mega Projects Open Database &mdash; data CC BY 4.0, code MIT.</div>
       <div class="footer-links">
@@ -151,12 +178,14 @@
       </div>
     </footer>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js"></script>
   <script>
     const CSV_URL = "https://raw.githubusercontent.com/megaprojects-open-db/ai/main/data/master.csv";
 
+    // Tab switching
     document.querySelectorAll(".tabs button").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
@@ -166,24 +195,25 @@
       });
     });
 
+    // Global state
+    let allRows = [];
+    const filters = { Country: null, Type: null };
+    const chartInstances = {};
+    let projectsGrid = null;
+
+    function destroyChart(id) {
+      if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+    }
+    function makeChart(id, config) {
+      destroyChart(id);
+      const el = document.getElementById(id);
+      if (!el) return null;
+      chartInstances[id] = new Chart(el, config);
+      return chartInstances[id];
+    }
     function showError(msg, container) {
       container.innerHTML = '<div class="error">Failed to load data: ' + msg + '<br><br>Check the browser console for details.</div>';
     }
-
-    const overview = document.getElementById("overview-content");
-
-    fetch(CSV_URL, { cache: "no-store" })
-      .then(r => { if (!r.ok) throw new Error("CSV fetch failed with HTTP " + r.status); return r.text(); })
-      .then(text => {
-        const parsed = Papa.parse(text, { header: true, dynamicTyping: false, skipEmptyLines: true });
-        if (parsed.errors && parsed.errors.length) console.warn("CSV parse warnings:", parsed.errors);
-        const rows = parsed.data.filter(r => r["Project Name"]);
-        if (rows.length === 0) throw new Error("CSV parsed but no rows had a Project Name");
-        try { render(rows); }
-        catch (e) { console.error("Render error:", e); showError("Render error: " + e.message, overview); }
-      })
-      .catch(err => { console.error("Load error:", err); showError(err.message, overview); });
-
     function num(v) {
       if (v === "" || v == null) return null;
       const n = parseFloat(v);
@@ -210,24 +240,92 @@
       return getCss("--type-other");
     }
 
-    function render(rows) {
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("last-updated").textContent =
-        "Last refreshed " + today + " – " + rows.length + " projects – data: master.csv";
-      renderOverview(rows);
-      renderProjects(rows);
-      renderSchedule(rows);
+    const overview = document.getElementById("overview-content");
+
+    fetch(CSV_URL, { cache: "no-store" })
+      .then(r => { if (!r.ok) throw new Error("CSV fetch failed with HTTP " + r.status); return r.text(); })
+      .then(text => {
+        const parsed = Papa.parse(text, { header: true, dynamicTyping: false, skipEmptyLines: true });
+        if (parsed.errors && parsed.errors.length) console.warn("CSV parse warnings:", parsed.errors);
+        allRows = parsed.data.filter(r => r["Project Name"]);
+        if (allRows.length === 0) throw new Error("CSV parsed but no rows had a Project Name");
+
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById("last-updated").textContent =
+          "Last refreshed " + today + " – " + allRows.length + " projects – data: master.csv";
+
+        populateFilters(allRows);
+        applyFilters();
+      })
+      .catch(err => { console.error("Load error:", err); showError(err.message, overview); });
+
+    function populateFilters(rows) {
+      const countries = [...new Set(rows.map(r => (r.Country || "").trim()).filter(Boolean))].sort();
+      const types = [...new Set(rows.map(r => (r.Type || "").trim()).filter(Boolean))].sort();
+      const cSel = document.getElementById("filter-country");
+      cSel.innerHTML = '<option value="">All countries</option>' + countries.map(c => '<option value="' + c + '">' + c + '</option>').join("");
+      const tSel = document.getElementById("filter-type");
+      tSel.innerHTML = '<option value="">All types</option>' + types.map(t => '<option value="' + t + '">' + t + '</option>').join("");
+      cSel.addEventListener("change", e => { filters.Country = e.target.value || null; applyFilters(); });
+      tSel.addEventListener("change", e => { filters.Type = e.target.value || null; applyFilters(); });
+      document.getElementById("filter-clear").addEventListener("click", () => {
+        filters.Country = null; filters.Type = null;
+        cSel.value = ""; tSel.value = "";
+        applyFilters();
+      });
+    }
+
+    function setFilter(key, value) {
+      if (filters[key] === value) { filters[key] = null; } else { filters[key] = value; }
+      const sel = document.getElementById("filter-" + key.toLowerCase());
+      if (sel) sel.value = filters[key] || "";
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const filtered = allRows.filter(r => {
+        if (filters.Country && (r.Country || "").trim() !== filters.Country) return false;
+        if (filters.Type && (r.Type || "").trim() !== filters.Type) return false;
+        return true;
+      });
+      renderChips(filtered.length);
+      renderOverview(filtered);
+      renderProjects(filtered);
+      renderSchedule(filtered);
+    }
+
+    function renderChips(filteredCount) {
+      const chips = [];
+      Object.keys(filters).forEach(k => {
+        if (filters[k]) chips.push('<span class="chip">' + k + ': ' + filters[k] + ' <button data-clear="' + k + '">×</button></span>');
+      });
+      const container = document.getElementById("filter-chips");
+      if (chips.length) {
+        container.innerHTML = chips.join(" ") + ' <span class="chip-count">' + filteredCount + ' of ' + allRows.length + ' projects</span>';
+        container.querySelectorAll('button[data-clear]').forEach(b => {
+          b.addEventListener("click", () => setFilter(b.dataset.clear, null));
+        });
+      } else {
+        container.innerHTML = '<em style="color: var(--muted)">No filters applied — showing all ' + allRows.length + ' projects</em>';
+      }
     }
 
     function renderOverview(rows) {
+      // Handle empty filtered set
+      if (rows.length === 0) {
+        overview.innerHTML = '<div class="empty">No projects match the current filters. <a href="#" id="reset-empty" style="color: var(--accent)">Clear filters</a></div>';
+        document.getElementById("reset-empty").addEventListener("click", e => {
+          e.preventDefault();
+          document.getElementById("filter-clear").click();
+        });
+        ["chart-overrun", "chart-country", "chart-type", "chart-year"].forEach(destroyChart);
+        return;
+      }
+
       const total = rows.length;
       const withFinal = rows.filter(r => num(r["Final Cost"]) != null);
-
-      // Average cost (use Final Cost where present)
       const finals = rows.map(r => num(r["Final Cost"])).filter(x => x != null && x > 0);
       const avgCost = finals.length ? finals.reduce((s, c) => s + c, 0) / finals.length : 0;
-
-      // Cost overrun: (final - FID) / FID * 100
       const overruns = rows.map(r => {
         const fid = num(r["FID Cost (when Approved)"]);
         const fin = num(r["Final Cost"]);
@@ -235,27 +333,20 @@
         return { name: r["Project Name"], country: r.Country, type: r.Type, fid, fin, pct: (fin - fid) / fid * 100 };
       }).filter(Boolean);
       const avgOverrun = overruns.length ? overruns.reduce((s, o) => s + o.pct, 0) / overruns.length : 0;
-
-      // Avg duration: FID Year -> Actual ISD Year, in years
       const durations = rows.map(r => {
-        const fid = parseInt(r["FID Year"]);
-        const isd = parseInt(r["Actual ISD Year"]);
+        const fid = parseInt(r["FID Year"]); const isd = parseInt(r["Actual ISD Year"]);
         if (isNaN(fid) || isNaN(isd) || fid <= 0 || isd <= 0 || isd < fid) return null;
         return isd - fid;
       }).filter(x => x != null);
       const avgDuration = durations.length ? durations.reduce((s, d) => s + d, 0) / durations.length : 0;
-
-      // Avg schedule overrun: Actual ISD Year - FID ISD Year, in years (positive = late)
       const slips = rows.map(r => {
-        const fidIsd = parseInt(r["FID ISD Year"]);
-        const actIsd = parseInt(r["Actual ISD Year"]);
-        if (isNaN(fidIsd) || isNaN(actIsd) || fidIsd <= 0 || actIsd <= 0) return null;
-        return actIsd - fidIsd;
+        const f = parseInt(r["FID ISD Year"]); const a = parseInt(r["Actual ISD Year"]);
+        if (isNaN(f) || isNaN(a) || f <= 0 || a <= 0) return null;
+        return a - f;
       }).filter(x => x != null);
       const avgSlip = slips.length ? slips.reduce((s, d) => s + d, 0) / slips.length : 0;
 
-      let html = "";
-      html += '<div class="metrics">';
+      let html = '<div class="metrics">';
       html += '<div class="metric"><div class="metric-label">Projects tracked</div><div class="metric-value">' + total + '</div><div class="metric-sub">' + withFinal.length + ' have final cost data</div></div>';
       html += '<div class="metric"><div class="metric-label">Average cost</div><div class="metric-value">$' + avgCost.toFixed(1) + 'B</div><div class="metric-sub">final cost, ' + finals.length + ' projects, mixed CAD/USD</div></div>';
       html += '<div class="metric"><div class="metric-label">Avg duration</div><div class="metric-value">' + avgDuration.toFixed(1) + ' yrs</div><div class="metric-sub">FID to in-service, ' + durations.length + ' projects</div></div>';
@@ -264,62 +355,73 @@
       html += '</div>';
       html += '<div class="charts">';
       html += '<div class="chart-card"><h2>Top cost overruns (% over FID)</h2><canvas id="chart-overrun"></canvas></div>';
-      html += '<div class="chart-card"><h2>Projects by country</h2><canvas id="chart-country"></canvas></div>';
-      html += '<div class="chart-card"><h2>Projects by type</h2><canvas id="chart-type"></canvas></div>';
+      html += '<div class="chart-card donut"><h2>Projects by country</h2><div class="canvas-wrap"><canvas id="chart-country"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
+      html += '<div class="chart-card donut"><h2>Projects by type</h2><div class="canvas-wrap"><canvas id="chart-type"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
       html += '<div class="chart-card"><h2>Completed by year</h2><canvas id="chart-year"></canvas></div>';
       html += '</div>';
       html += '<div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Data is compiled from public sources with LLM research assistance — not independently verified. See <a href="#" id="link-about" style="color: var(--accent);">About &amp; methodology</a>.</div>';
       overview.innerHTML = html;
-      document.getElementById("link-about").addEventListener("click", function(e) {
+      document.getElementById("link-about").addEventListener("click", e => {
         e.preventDefault();
         document.querySelector('.tabs button[data-tab="about"]').click();
       });
 
+      // Bar: top overruns
       const top = [...overruns].sort((a, b) => b.pct - a.pct).slice(0, 10);
-      new Chart(document.getElementById("chart-overrun"), {
+      makeChart("chart-overrun", {
         type: "bar",
-        data: {
-          labels: top.map(o => trunc(o.name, 28)),
-          datasets: [{
-            label: "Overrun %",
-            data: top.map(o => o.pct),
-            backgroundColor: top.map(o => o.pct > 50 ? "#dc2626" : o.pct > 20 ? "#f59e0b" : "#10b981"),
-            borderRadius: 3
-          }]
-        },
+        data: { labels: top.map(o => trunc(o.name, 28)),
+                datasets: [{ label: "Overrun %", data: top.map(o => o.pct),
+                  backgroundColor: top.map(o => o.pct > 50 ? "#dc2626" : o.pct > 20 ? "#f59e0b" : "#10b981"),
+                  borderRadius: 3 }] },
+        options: { indexAxis: "y", maintainAspectRatio: false,
+                   plugins: { legend: { display: false } },
+                   scales: { x: { ticks: { callback: v => v + "%" } } } }
+      });
+
+      // Doughnut: by country (clickable)
+      const palette = ["#1f4e79", "#dc2626", "#d97706", "#15803d", "#6b4f8f", "#0891b2", "#64748b", "#be185d"];
+      const byCountry = groupCount(rows, "Country");
+      const countryLabels = Object.keys(byCountry);
+      makeChart("chart-country", {
+        type: "doughnut",
+        data: { labels: countryLabels, datasets: [{ data: Object.values(byCountry), backgroundColor: palette, borderWidth: 1 }] },
         options: {
-          indexAxis: "y",
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { x: { ticks: { callback: v => v + "%" } } }
+          plugins: { legend: { position: "bottom", labels: { font: { size: 11 }, boxWidth: 12 } } },
+          onClick: (evt, els) => {
+            if (els.length) {
+              const label = countryLabels[els[0].index];
+              if (label && label !== "(unspecified)") setFilter("Country", label);
+            }
+          }
         }
       });
 
-      const palette = ["#1f4e79", "#dc2626", "#d97706", "#15803d", "#6b4f8f", "#0891b2", "#64748b", "#be185d"];
-      const byCountry = groupCount(rows, "Country");
-      new Chart(document.getElementById("chart-country"), {
-        type: "doughnut",
-        data: { labels: Object.keys(byCountry), datasets: [{ data: Object.values(byCountry), backgroundColor: palette, borderWidth: 1 }] },
-        options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } } } }
-      });
-
+      // Doughnut: by type (clickable)
       const byType = groupCount(rows, "Type");
-      const typeColors = Object.keys(byType).map(typeColor);
-      new Chart(document.getElementById("chart-type"), {
+      const typeLabels = Object.keys(byType);
+      const typeColors = typeLabels.map(typeColor);
+      makeChart("chart-type", {
         type: "doughnut",
-        data: { labels: Object.keys(byType), datasets: [{ data: Object.values(byType), backgroundColor: typeColors, borderWidth: 1 }] },
-        options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } } } }
+        data: { labels: typeLabels, datasets: [{ data: Object.values(byType), backgroundColor: typeColors, borderWidth: 1 }] },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom", labels: { font: { size: 11 }, boxWidth: 12 } } },
+          onClick: (evt, els) => {
+            if (els.length) {
+              const label = typeLabels[els[0].index];
+              if (label && label !== "(unspecified)") setFilter("Type", label);
+            }
+          }
+        }
       });
 
+      // Bar: by completion year
       const byYear = {};
-      rows.forEach(r => {
-        const y = r["Actual ISD Year"];
-        if (!y) return;
-        const k = String(y).slice(0, 4);
-        byYear[k] = (byYear[k] || 0) + 1;
-      });
+      rows.forEach(r => { const y = r["Actual ISD Year"]; if (!y) return; const k = String(y).slice(0, 4); byYear[k] = (byYear[k] || 0) + 1; });
       const years = Object.keys(byYear).sort();
-      new Chart(document.getElementById("chart-year"), {
+      makeChart("chart-year", {
         type: "bar",
         data: { labels: years, datasets: [{ label: "Completions", data: years.map(y => byYear[y]), backgroundColor: getCss("--accent"), borderRadius: 3 }] },
         options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
@@ -332,19 +434,13 @@
         const fin = num(r["Final Cost"]);
         const pct = (fid && fin && fid > 0) ? ((fin - fid) / fid * 100) : null;
         return [
-          r["Project Name"] || "",
-          r["Type"] || "",
-          r["Sub Type"] || "",
-          r["Country"] || "",
-          r["Actual ISD Year"] || "",
-          fid != null ? fid.toFixed(2) : "",
-          fin != null ? fin.toFixed(2) : "",
-          pct != null ? pct.toFixed(1) : "",
-          r["Source"] || ""
+          r["Project Name"] || "", r["Type"] || "", r["Sub Type"] || "",
+          r["Country"] || "", r["Actual ISD Year"] || "",
+          fid != null ? fid.toFixed(2) : "", fin != null ? fin.toFixed(2) : "",
+          pct != null ? pct.toFixed(1) : "", r["Source"] || ""
         ];
       });
-
-      new gridjs.Grid({
+      const cfg = {
         columns: [
           { name: "Project", width: "300px" },
           { name: "Type", width: "110px" },
@@ -353,94 +449,63 @@
           { name: "In-Service", width: "90px" },
           { name: "FID Cost ($B)", width: "90px" },
           { name: "Final ($B)", width: "90px" },
-          {
-            name: "Overrun %", width: "100px",
+          { name: "Overrun %", width: "100px",
             formatter: (cell) => {
               if (cell === "" || cell == null) return "";
               const n = parseFloat(cell);
               const cls = n > 50 ? "pill-overrun-high" : n > 20 ? "pill-overrun-mid" : "pill-overrun-low";
               return gridjs.html('<span class="pill ' + cls + '">' + (n >= 0 ? "+" : "") + n.toFixed(1) + '%</span>');
-            }
-          },
-          {
-            name: "Source", width: "80px",
-            formatter: (cell) => cell ? gridjs.html('<a href="' + cell + '" target="_blank" rel="noopener">link</a>') : ""
-          }
+            } },
+          { name: "Source", width: "80px",
+            formatter: (cell) => cell ? gridjs.html('<a href="' + cell + '" target="_blank" rel="noopener">link</a>') : "" }
         ],
-        data: tableData,
-        sort: true,
-        search: true,
+        data: tableData, sort: true, search: true,
         pagination: { enabled: true, limit: 25 }
-      }).render(document.getElementById("grid"));
+      };
+      if (projectsGrid) {
+        projectsGrid.updateConfig({ data: tableData }).forceRender();
+      } else {
+        projectsGrid = new gridjs.Grid(cfg).render(document.getElementById("grid"));
+      }
     }
 
     function renderSchedule(rows) {
-      const gantt = rows
-        .map(r => {
-          const start = parseInt(r["Construction Start Year"]);
-          const end = parseInt(r["Actual ISD Year"]);
-          if (isNaN(start) || isNaN(end) || start <= 0 || end <= 0 || end < start) return null;
-          return { name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "", start, end, dur: end - start };
-        })
-        .filter(Boolean)
-        .sort((a, b) => b.end - a.end)
-        .slice(0, 30);
+      const gantt = rows.map(r => {
+        const s = parseInt(r["Construction Start Year"]); const e = parseInt(r["Actual ISD Year"]);
+        if (isNaN(s) || isNaN(e) || s <= 0 || e <= 0 || e < s) return null;
+        return { name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "", start: s, end: e, dur: e - s };
+      }).filter(Boolean).sort((a, b) => b.end - a.end).slice(0, 30);
 
+      const wrap = document.getElementById("chart-gantt").parentElement;
       if (gantt.length === 0) {
-        document.getElementById("chart-gantt").parentElement.innerHTML =
-          '<div class="loading">No projects have both Construction Start Year and Actual ISD Year populated.</div>';
+        destroyChart("chart-gantt");
+        wrap.innerHTML = '<div class="empty">No projects in current filter have both Construction Start and Actual ISD years.</div>';
+        document.getElementById("gantt-legend").innerHTML = "";
         return;
       }
-
+      // Restore canvas if we replaced it with the empty message
+      if (!document.getElementById("chart-gantt")) {
+        wrap.innerHTML = '<canvas id="chart-gantt"></canvas>';
+      }
       const colors = gantt.map(g => typeColor(g.type));
-      const minYear = Math.min.apply(null, gantt.map(g => g.start)) - 1;
-      const maxYear = Math.max.apply(null, gantt.map(g => g.end)) + 1;
-
-      new Chart(document.getElementById("chart-gantt"), {
+      const minY = Math.min.apply(null, gantt.map(g => g.start)) - 1;
+      const maxY = Math.max.apply(null, gantt.map(g => g.end)) + 1;
+      makeChart("chart-gantt", {
         type: "bar",
-        data: {
-          labels: gantt.map(g => trunc(g.name, 42)),
-          datasets: [{
-            label: "Construction span",
-            data: gantt.map(g => [g.start, g.end]),
-            backgroundColor: colors,
-            borderColor: colors,
-            borderWidth: 0,
-            borderRadius: 3,
-            barPercentage: 0.78
-          }]
-        },
-        options: {
-          indexAxis: "y",
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => {
-                  const g = gantt[ctx.dataIndex];
-                  return g.start + " → " + g.end + "  (" + g.dur + " yrs, " + g.type + ", " + g.country + ")";
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              type: "linear",
-              position: "top",
-              min: minYear,
-              max: maxYear,
-              ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v : "" },
-              grid: { color: "#eee" }
-            },
-            y: {
-              ticks: { font: { size: 11 }, autoSkip: false },
-              grid: { display: false }
-            }
-          }
-        }
+        data: { labels: gantt.map(g => trunc(g.name, 42)),
+                datasets: [{ label: "Construction span", data: gantt.map(g => [g.start, g.end]),
+                  backgroundColor: colors, borderColor: colors, borderWidth: 0,
+                  borderRadius: 3, barPercentage: 0.78 }] },
+        options: { indexAxis: "y", maintainAspectRatio: false,
+                   plugins: { legend: { display: false },
+                              tooltip: { callbacks: { label: ctx => {
+                                const g = gantt[ctx.dataIndex];
+                                return g.start + " → " + g.end + "  (" + g.dur + " yrs, " + g.type + ", " + g.country + ")";
+                              } } } },
+                   scales: { x: { type: "linear", position: "top", min: minY, max: maxY,
+                                  ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v : "" }, grid: { color: "#eee" } },
+                             y: { ticks: { font: { size: 11 }, autoSkip: false }, grid: { display: false } } } }
       });
-
       const types = [];
       gantt.forEach(g => { if (types.indexOf(g.type) < 0) types.push(g.type); });
       document.getElementById("gantt-legend").innerHTML = types.map(t =>
