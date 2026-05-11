@@ -6,6 +6,7 @@
 <title>Mega Projects Open Database</title>
 <meta name="description" content="Open database of cost and schedule performance for $1B+ infrastructure, energy, and industrial projects.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css">
 <style>
   :root {
     --bg: #f7f7f5; --card: #ffffff; --border: #e5e5e0; --border-strong: #d1d1ca;
@@ -92,6 +93,16 @@
   .pill-overrun-high { background: #fee; color: var(--bad); }
   .pill-overrun-mid { background: #fef3c7; color: var(--warn); }
   .pill-overrun-low { background: #dcfce7; color: var(--good); }
+  .filters-ranges { display: flex; flex-wrap: wrap; gap: 20px 28px; margin-bottom: 12px; padding: 14px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+  .filter-range { flex: 1 1 280px; min-width: 240px; }
+  .filter-range-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 10px; }
+  .filter-range-label .values { color: var(--text); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .noUi-target { background: var(--bg); border-color: var(--border-strong); box-shadow: none; height: 6px; }
+  .noUi-connect { background: var(--accent); }
+  .noUi-handle { box-shadow: 0 1px 3px rgba(0,0,0,0.2); border-color: var(--border-strong); background: #fff; border-radius: 50%; height: 18px !important; width: 18px !important; right: -9px !important; top: -7px !important; cursor: grab; }
+  .noUi-handle:before, .noUi-handle:after { display: none; }
+  .noUi-handle:active { cursor: grabbing; }
+  .noUi-handle:focus { outline: 2px solid var(--accent-light); }
 </style>
 </head>
 <body>
@@ -107,7 +118,19 @@
       <select id="filter-country"><option value="">All countries</option></select>
       <label for="filter-type">Type</label>
       <select id="filter-type"><option value="">All types</option></select>
+      <label for="filter-subtype">Sub type</label>
+      <select id="filter-subtype"><option value="">All sub types</option></select>
       <button class="filter-clear" id="filter-clear">Clear all</button>
+    </div>
+    <div class="filters-ranges">
+      <div class="filter-range">
+        <div class="filter-range-label"><span>Completion year (Actual ISD)</span><span class="values" id="year-values">—</span></div>
+        <div id="slider-year"></div>
+      </div>
+      <div class="filter-range">
+        <div class="filter-range-label"><span>Project cost (final, $B)</span><span class="values" id="cost-values">—</span></div>
+        <div id="slider-cost"></div>
+      </div>
     </div>
     <div class="filter-chips" id="filter-chips"></div>
 
@@ -182,6 +205,7 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
   <script>
     const CSV_URL = "https://raw.githubusercontent.com/megaprojects-open-db/ai/main/data/master.csv";
 
@@ -197,7 +221,9 @@
 
     // Global state
     let allRows = [];
-    const filters = { Country: null, Type: null };
+    const filters = { Country: null, Type: null, SubType: null, YearRange: null, CostRange: null };
+    let yearBounds = null;  // [min, max] of Actual ISD Year in data
+    let costBounds = null;  // [min, max] of Final Cost in data
     const chartInstances = {};
     let projectsGrid = null;
 
@@ -262,15 +288,77 @@
     function populateFilters(rows) {
       const countries = [...new Set(rows.map(r => (r.Country || "").trim()).filter(Boolean))].sort();
       const types = [...new Set(rows.map(r => (r.Type || "").trim()).filter(Boolean))].sort();
+      const subtypes = [...new Set(rows.map(r => (r["Sub Type"] || "").trim()).filter(Boolean))].sort();
+
       const cSel = document.getElementById("filter-country");
       cSel.innerHTML = '<option value="">All countries</option>' + countries.map(c => '<option value="' + c + '">' + c + '</option>').join("");
       const tSel = document.getElementById("filter-type");
       tSel.innerHTML = '<option value="">All types</option>' + types.map(t => '<option value="' + t + '">' + t + '</option>').join("");
+      const sSel = document.getElementById("filter-subtype");
+      sSel.innerHTML = '<option value="">All sub types</option>' + subtypes.map(s => '<option value="' + s + '">' + s + '</option>').join("");
+
       cSel.addEventListener("change", e => { filters.Country = e.target.value || null; applyFilters(); });
       tSel.addEventListener("change", e => { filters.Type = e.target.value || null; applyFilters(); });
+      sSel.addEventListener("change", e => { filters.SubType = e.target.value || null; applyFilters(); });
+
+      // Year slider — based on Actual ISD Year
+      const years = rows.map(r => parseInt(r["Actual ISD Year"])).filter(y => !isNaN(y) && y > 0);
+      if (years.length) {
+        const minY = Math.min.apply(null, years);
+        const maxY = Math.max.apply(null, years);
+        yearBounds = [minY, maxY];
+        const yEl = document.getElementById("slider-year");
+        noUiSlider.create(yEl, {
+          start: [minY, maxY],
+          range: { min: minY, max: maxY },
+          step: 1, connect: true,
+          format: { to: v => Math.round(v), from: v => Number(v) }
+        });
+        yEl.noUiSlider.on("update", values => {
+          document.getElementById("year-values").textContent = values[0] + " – " + values[1];
+        });
+        yEl.noUiSlider.on("change", values => {
+          const lo = parseInt(values[0]); const hi = parseInt(values[1]);
+          filters.YearRange = (lo === yearBounds[0] && hi === yearBounds[1]) ? null : [lo, hi];
+          applyFilters();
+        });
+      }
+
+      // Cost slider — based on Final Cost (else FID Cost as fallback)
+      const costs = rows.map(r => {
+        const f = parseFloat(r["Final Cost"]);
+        if (!isNaN(f) && f > 0) return f;
+        const fi = parseFloat(r["FID Cost (when Approved)"]);
+        return (!isNaN(fi) && fi > 0) ? fi : null;
+      }).filter(x => x != null);
+      if (costs.length) {
+        // Round bounds for cleaner slider extremes
+        const minC = Math.floor(Math.min.apply(null, costs) * 10) / 10;
+        const maxC = Math.ceil(Math.max.apply(null, costs));
+        costBounds = [minC, maxC];
+        const cEl = document.getElementById("slider-cost");
+        noUiSlider.create(cEl, {
+          start: [minC, maxC],
+          range: { min: minC, max: maxC },
+          step: 0.1, connect: true,
+          format: { to: v => Number(v).toFixed(1), from: v => Number(v) }
+        });
+        cEl.noUiSlider.on("update", values => {
+          document.getElementById("cost-values").textContent = "$" + values[0] + "B – $" + values[1] + "B";
+        });
+        cEl.noUiSlider.on("change", values => {
+          const lo = parseFloat(values[0]); const hi = parseFloat(values[1]);
+          filters.CostRange = (lo === costBounds[0] && hi === costBounds[1]) ? null : [lo, hi];
+          applyFilters();
+        });
+      }
+
       document.getElementById("filter-clear").addEventListener("click", () => {
-        filters.Country = null; filters.Type = null;
-        cSel.value = ""; tSel.value = "";
+        filters.Country = null; filters.Type = null; filters.SubType = null;
+        filters.YearRange = null; filters.CostRange = null;
+        cSel.value = ""; tSel.value = ""; sSel.value = "";
+        if (yearBounds) document.getElementById("slider-year").noUiSlider.set(yearBounds);
+        if (costBounds) document.getElementById("slider-cost").noUiSlider.set(costBounds);
         applyFilters();
       });
     }
@@ -286,6 +374,17 @@
       const filtered = allRows.filter(r => {
         if (filters.Country && (r.Country || "").trim() !== filters.Country) return false;
         if (filters.Type && (r.Type || "").trim() !== filters.Type) return false;
+        if (filters.SubType && (r["Sub Type"] || "").trim() !== filters.SubType) return false;
+        if (filters.YearRange) {
+          const y = parseInt(r["Actual ISD Year"]);
+          if (isNaN(y) || y < filters.YearRange[0] || y > filters.YearRange[1]) return false;
+        }
+        if (filters.CostRange) {
+          let c = parseFloat(r["Final Cost"]);
+          if (isNaN(c) || c <= 0) c = parseFloat(r["FID Cost (when Approved)"]);
+          if (isNaN(c) || c <= 0) return false;
+          if (c < filters.CostRange[0] || c > filters.CostRange[1]) return false;
+        }
         return true;
       });
       renderChips(filtered.length);
@@ -296,18 +395,34 @@
 
     function renderChips(filteredCount) {
       const chips = [];
+      const labelMap = { Country: "Country", Type: "Type", SubType: "Sub type", YearRange: "Year", CostRange: "Cost" };
       Object.keys(filters).forEach(k => {
-        if (filters[k]) chips.push('<span class="chip">' + k + ': ' + filters[k] + ' <button data-clear="' + k + '">×</button></span>');
+        if (!filters[k]) return;
+        let displayValue;
+        if (k === "YearRange") displayValue = filters[k][0] + "–" + filters[k][1];
+        else if (k === "CostRange") displayValue = "$" + filters[k][0] + "B–$" + filters[k][1] + "B";
+        else displayValue = filters[k];
+        chips.push('<span class="chip">' + labelMap[k] + ': ' + displayValue + ' <button data-clear="' + k + '">×</button></span>');
       });
       const container = document.getElementById("filter-chips");
       if (chips.length) {
         container.innerHTML = chips.join(" ") + ' <span class="chip-count">' + filteredCount + ' of ' + allRows.length + ' projects</span>';
         container.querySelectorAll('button[data-clear]').forEach(b => {
-          b.addEventListener("click", () => setFilter(b.dataset.clear, null));
+          b.addEventListener("click", () => clearOneFilter(b.dataset.clear));
         });
       } else {
         container.innerHTML = '<em style="color: var(--muted)">No filters applied — showing all ' + allRows.length + ' projects</em>';
       }
+    }
+
+    function clearOneFilter(key) {
+      filters[key] = null;
+      if (key === "Country") document.getElementById("filter-country").value = "";
+      else if (key === "Type") document.getElementById("filter-type").value = "";
+      else if (key === "SubType") document.getElementById("filter-subtype").value = "";
+      else if (key === "YearRange" && yearBounds) document.getElementById("slider-year").noUiSlider.set(yearBounds);
+      else if (key === "CostRange" && costBounds) document.getElementById("slider-cost").noUiSlider.set(costBounds);
+      applyFilters();
     }
 
     function renderOverview(rows) {
