@@ -28,186 +28,55 @@
     --type-other: #64748b;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-  }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; -webkit-font-smoothing: antialiased; }
   .container { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
-
-  /* Header */
   header { margin-bottom: 20px; }
-  h1 {
-    margin: 0 0 6px 0;
-    font-size: 30px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    color: var(--text);
-  }
+  h1 { margin: 0 0 6px 0; font-size: 30px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); }
   .tagline { color: var(--text-muted); font-size: 15px; margin: 0; max-width: 720px; }
   .last-updated { font-size: 12px; color: var(--muted); margin-top: 10px; }
-
-  /* Tabs */
-  .tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: 1px solid var(--border-strong);
-    margin-bottom: 24px;
-    padding-bottom: 0;
-    overflow-x: auto;
-  }
-  .tabs button {
-    background: transparent;
-    border: none;
-    padding: 12px 18px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    transition: color 0.15s, border-color 0.15s;
-    white-space: nowrap;
-    font-family: inherit;
-  }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-strong); margin-bottom: 24px; overflow-x: auto; }
+  .tabs button { background: transparent; border: none; padding: 12px 18px; font-size: 14px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; font-family: inherit; }
   .tabs button:hover { color: var(--accent); }
-  .tabs button.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
+  .tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
-
-  /* Metrics */
-  .metrics {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .metric {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 18px;
-  }
-  .metric-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    font-weight: 500;
-  }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .metric { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+  .metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; }
   .metric-value { font-size: 28px; font-weight: 600; margin-top: 6px; color: var(--text); }
   .metric-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-  /* Charts */
-  .charts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  .chart-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 18px;
-  }
-  .chart-card h2 {
-    margin: 0 0 14px 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-  }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+  .chart-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
   .chart-card canvas { width: 100% !important; height: 280px !important; }
-
-  /* Gantt-specific */
   .gantt-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
-  .gantt-card h2 {
-    margin: 0 0 14px 0;
-    font-size: 13px; font-weight: 600;
-    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px;
-  }
+  .gantt-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
   .gantt-wrapper { position: relative; height: 720px; overflow-y: auto; }
-  .gantt-legend {
-    display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px;
-    font-size: 12px; color: var(--text-muted);
-  }
+  .gantt-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 12px; color: var(--text-muted); }
   .gantt-legend-item { display: flex; align-items: center; gap: 6px; }
   .gantt-legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
-
-  /* Table */
   .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
-  .table-card h2 {
-    margin: 0 0 14px 0;
-    font-size: 13px; font-weight: 600;
-    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px;
-  }
-
-  /* About */
+  .table-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
   .about-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
   @media (max-width: 768px) { .about-grid { grid-template-columns: 1fr; } }
-  .about-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 22px;
-  }
-  .about-card h2 {
-    margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: var(--text);
-  }
-  .about-card h3 {
-    margin: 18px 0 8px 0; font-size: 14px; font-weight: 600; color: var(--text);
-  }
+  .about-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 22px; }
+  .about-card h2 { margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: var(--text); }
+  .about-card h3 { margin: 18px 0 8px 0; font-size: 14px; font-weight: 600; color: var(--text); }
   .about-card p { margin: 0 0 12px 0; color: var(--text); font-size: 14px; }
   .about-card a { color: var(--accent); }
   .about-card ul { padding-left: 20px; margin: 0 0 12px 0; }
   .about-card li { margin-bottom: 6px; font-size: 14px; }
-
-  .disclaimer {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    padding: 14px 18px;
-    color: #78350f;
-    font-size: 13px;
-    margin-bottom: 20px;
-  }
+  .disclaimer { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; color: #78350f; font-size: 13px; margin-bottom: 20px; }
   .disclaimer strong { color: #78350f; }
-
-  /* Footer */
-  .footer {
-    margin-top: 36px;
-    padding: 18px 0;
-    border-top: 1px solid var(--border-strong);
-    color: var(--muted);
-    font-size: 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    justify-content: space-between;
-  }
+  .footer { margin-top: 36px; padding: 18px 0; border-top: 1px solid var(--border-strong); color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
   .footer a { color: var(--accent); text-decoration: none; }
   .footer a:hover { text-decoration: underline; }
   .footer-links { display: flex; gap: 14px; flex-wrap: wrap; }
-
   .loading, .error { text-align: center; padding: 56px 20px; color: var(--text-muted); }
   .error { color: var(--bad); }
-
   .gridjs-container { font-size: 13px; }
   .gridjs-th, .gridjs-td { padding: 8px 10px; }
-
-  .pill {
-    display: inline-block;
-    padding: 1px 8px;
-    border-radius: 999px;
-    font-size: 11px;
-    background: #f0f0f0;
-    color: #444;
-  }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; background: #f0f0f0; color: #444; }
   .pill-overrun-high { background: #fee; color: var(--bad); }
   .pill-overrun-mid { background: #fef3c7; color: var(--warn); }
   .pill-overrun-low { background: #dcfce7; color: var(--good); }
@@ -220,25 +89,18 @@
       <p class="tagline">Cost and schedule performance of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia.</p>
       <p class="last-updated" id="last-updated">Loading data...</p>
     </header>
-
     <nav class="tabs" id="tabs">
       <button data-tab="overview" class="active">Overview</button>
       <button data-tab="projects">Projects</button>
       <button data-tab="schedule">Schedule</button>
       <button data-tab="about">About &amp; methodology</button>
     </nav>
-
     <div id="tab-overview" class="tab-panel active">
       <div id="overview-content"><div class="loading">Loading project data...</div></div>
     </div>
-
     <div id="tab-projects" class="tab-panel">
-      <div class="table-card">
-        <h2>All projects</h2>
-        <div id="grid"></div>
-      </div>
+      <div class="table-card"><h2>All projects</h2><div id="grid"></div></div>
     </div>
-
     <div id="tab-schedule" class="tab-panel">
       <div class="gantt-card">
         <h2>Construction timelines (most recent 30)</h2>
@@ -246,17 +108,15 @@
         <div class="gantt-legend" id="gantt-legend"></div>
       </div>
     </div>
-
     <div id="tab-about" class="tab-panel">
       <div class="disclaimer">
-        <strong>Disclaimer.</strong> Data on this site is compiled from public sources with research assistance from large language models. It is <strong>not independently verified or audited</strong>. The purpose is information sharing and trend analysis only — do not use it for business decisions, investment analysis, or regulatory compliance.
+        <strong>Disclaimer.</strong> Data on this site is compiled from public sources with research assistance from large language models. It is <strong>not independently verified or audited</strong>. The purpose is information sharing and trend analysis only &mdash; do not use it for business decisions, investment analysis, or regulatory compliance.
       </div>
       <div class="about-grid">
         <div class="about-card">
           <h2>About this database</h2>
-          <p>The Mega Projects Open Database is a community-maintained, transparent record of how large infrastructure, energy, and industrial projects perform on cost and schedule — what they were planned to cost and finish, versus what they actually did.</p>
-          <p>The goal is to make the cost-and-schedule history of mega projects easier to look up, compare, and reason about — for researchers, journalists, policymakers, and anyone curious.</p>
-
+          <p>The Mega Projects Open Database is a community-maintained, transparent record of how large infrastructure, energy, and industrial projects perform on cost and schedule &mdash; what they were planned to cost and finish, versus what they actually did.</p>
+          <p>The goal is to make the cost-and-schedule history of mega projects easier to look up, compare, and reason about &mdash; for researchers, journalists, policymakers, and anyone curious.</p>
           <h3>Scope</h3>
           <ul>
             <li><strong>Sectors:</strong> Infrastructure (transport, water, civic), Energy &amp; power, Industrial &amp; manufacturing</li>
@@ -264,14 +124,11 @@
             <li><strong>Threshold:</strong> ~$1B (USD or CAD) total project cost</li>
             <li><strong>Time:</strong> projects from any era, with active research focused on recent completions</li>
           </ul>
-
           <h3>Methodology</h3>
-          <p>Each entry is sourced from at least one public document — government regulator filings, audit reports, project owner press releases, or major media reporting. Where possible, dates and costs are cross-checked against multiple sources. Confidence levels and source URLs are tracked per row in the underlying dataset.</p>
-
+          <p>Each entry is sourced from at least one public document &mdash; government regulator filings, audit reports, project owner press releases, or major media reporting. Where possible, dates and costs are cross-checked against multiple sources. Confidence levels and source URLs are tracked per row in the underlying dataset.</p>
           <h3>How to contribute</h3>
           <p>Got a correction or a missing project? Open a Pull Request on the GitHub repo with the change and a primary source link in the commit message. For larger changes (new columns, schema), open an issue first.</p>
         </div>
-
         <div class="about-card">
           <h2>More from us</h2>
           <ul>
@@ -280,15 +137,13 @@
             <li><a href="https://github.com/megaprojects-open-db/ai/issues/new" target="_blank" rel="noopener">Submit a correction</a></li>
             <li><a href="https://github.com/megaprojects-open-db/ai" target="_blank" rel="noopener">Source on GitHub</a></li>
           </ul>
-
           <h3>License</h3>
-          <p>Data: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> — attribute as "Mega Projects Open Database."<br>Code: MIT.</p>
+          <p>Data: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> &mdash; attribute as "Mega Projects Open Database."<br>Code: MIT.</p>
         </div>
       </div>
     </div>
-
     <footer class="footer">
-      <div>© Mega Projects Open Database — data CC BY 4.0, code MIT.</div>
+      <div>&copy; Mega Projects Open Database &mdash; data CC BY 4.0, code MIT.</div>
       <div class="footer-links">
         <a href="https://github.com/megaprojects-open-db/ai" target="_blank" rel="noopener">Source</a>
         <a href="https://github.com/megaprojects-open-db/ai/blob/main/data/master.csv" target="_blank" rel="noopener">Raw data</a>
@@ -296,16 +151,12 @@
       </div>
     </footer>
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js"></script>
   <script>
-    // master.csv lives at /data/master.csv in the repo root, not under /docs.
-    // Pages serves /docs as the site root, so we fetch via raw.githubusercontent.com.
     const CSV_URL = "https://raw.githubusercontent.com/megaprojects-open-db/ai/main/data/master.csv";
 
-    // Tab switching
     document.querySelectorAll(".tabs button").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
@@ -316,7 +167,268 @@
     });
 
     function showError(msg, container) {
-      container.innerHTML = `<div class="error">Failed to load data: ${msg}<br><br>Check the browser console for details.</div>`;
+      container.innerHTML = '<div class="error">Failed to load data: ' + msg + '<br><br>Check the browser console for details.</div>';
     }
 
-    const overview = d
+    const overview = document.getElementById("overview-content");
+
+    fetch(CSV_URL, { cache: "no-store" })
+      .then(r => { if (!r.ok) throw new Error("CSV fetch failed with HTTP " + r.status); return r.text(); })
+      .then(text => {
+        const parsed = Papa.parse(text, { header: true, dynamicTyping: false, skipEmptyLines: true });
+        if (parsed.errors && parsed.errors.length) console.warn("CSV parse warnings:", parsed.errors);
+        const rows = parsed.data.filter(r => r["Project Name"]);
+        if (rows.length === 0) throw new Error("CSV parsed but no rows had a Project Name");
+        try { render(rows); }
+        catch (e) { console.error("Render error:", e); showError("Render error: " + e.message, overview); }
+      })
+      .catch(err => { console.error("Load error:", err); showError(err.message, overview); });
+
+    function num(v) {
+      if (v === "" || v == null) return null;
+      const n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    }
+    function trunc(s, n) { return (s && s.length > n) ? s.slice(0, n - 1) + "..." : s; }
+    function groupCount(rows, key) {
+      const out = {};
+      rows.forEach(r => {
+        const v = ((r[key] || "(unspecified)") + "").trim();
+        out[v] = (out[v] || 0) + 1;
+      });
+      return Object.fromEntries(Object.entries(out).sort((a, b) => b[1] - a[1]));
+    }
+    function getCss(varName) {
+      return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || "#64748b";
+    }
+    function typeColor(t) {
+      const k = (t || "").trim().toLowerCase();
+      if (k.startsWith("gen")) return getCss("--type-generation");
+      if (k.startsWith("trans") && k.indexOf("port") >= 0) return getCss("--type-transportation");
+      if (k.startsWith("trans")) return getCss("--type-transmission");
+      if (k.startsWith("indus")) return getCss("--type-industrial");
+      return getCss("--type-other");
+    }
+
+    function render(rows) {
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("last-updated").textContent =
+        "Last refreshed " + today + " – " + rows.length + " projects – data: master.csv";
+      renderOverview(rows);
+      renderProjects(rows);
+      renderSchedule(rows);
+    }
+
+    function renderOverview(rows) {
+      const total = rows.length;
+      const withFid = rows.filter(r => num(r["FID Cost (when Approved)"]) != null);
+      const withFinal = rows.filter(r => num(r["Final Cost"]) != null);
+      const totalFid = withFid.reduce((s, r) => s + num(r["FID Cost (when Approved)"]), 0);
+
+      const overruns = rows.map(r => {
+        const fid = num(r["FID Cost (when Approved)"]);
+        const fin = num(r["Final Cost"]);
+        if (fid == null || fin == null || fid <= 0) return null;
+        return { name: r["Project Name"], country: r.Country, type: r.Type, fid, fin, pct: (fin - fid) / fid * 100 };
+      }).filter(Boolean);
+      const avgOverrun = overruns.length ? overruns.reduce((s, o) => s + o.pct, 0) / overruns.length : 0;
+
+      const recent = rows.filter(r => {
+        const y = parseInt(r["Actual ISD Year"]);
+        return y >= 2025 && y <= 2026;
+      }).length;
+
+      let html = "";
+      html += '<div class="metrics">';
+      html += '<div class="metric"><div class="metric-label">Projects tracked</div><div class="metric-value">' + total + '</div><div class="metric-sub">' + withFinal.length + ' have final cost data</div></div>';
+      html += '<div class="metric"><div class="metric-label">Total FID-approved</div><div class="metric-value">' + totalFid.toFixed(0) + 'B</div><div class="metric-sub">' + withFid.length + ' projects, mixed CAD/USD</div></div>';
+      html += '<div class="metric"><div class="metric-label">Avg cost overrun</div><div class="metric-value" style="color: var(--bad)">' + (avgOverrun >= 0 ? "+" : "") + avgOverrun.toFixed(1) + '%</div><div class="metric-sub">final vs FID, ' + overruns.length + ' projects</div></div>';
+      html += '<div class="metric"><div class="metric-label">Completed 2025–26</div><div class="metric-value">' + recent + '</div><div class="metric-sub">in active research window</div></div>';
+      html += '</div>';
+      html += '<div class="charts">';
+      html += '<div class="chart-card"><h2>Top cost overruns (% over FID)</h2><canvas id="chart-overrun"></canvas></div>';
+      html += '<div class="chart-card"><h2>Projects by country</h2><canvas id="chart-country"></canvas></div>';
+      html += '<div class="chart-card"><h2>Projects by type</h2><canvas id="chart-type"></canvas></div>';
+      html += '<div class="chart-card"><h2>Completed by year</h2><canvas id="chart-year"></canvas></div>';
+      html += '</div>';
+      html += '<div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Data is compiled from public sources with LLM research assistance — not independently verified. See <a href="#" id="link-about" style="color: var(--accent);">About &amp; methodology</a>.</div>';
+      overview.innerHTML = html;
+      document.getElementById("link-about").addEventListener("click", function(e) {
+        e.preventDefault();
+        document.querySelector('.tabs button[data-tab="about"]').click();
+      });
+
+      const top = [...overruns].sort((a, b) => b.pct - a.pct).slice(0, 10);
+      new Chart(document.getElementById("chart-overrun"), {
+        type: "bar",
+        data: {
+          labels: top.map(o => trunc(o.name, 28)),
+          datasets: [{
+            label: "Overrun %",
+            data: top.map(o => o.pct),
+            backgroundColor: top.map(o => o.pct > 50 ? "#dc2626" : o.pct > 20 ? "#f59e0b" : "#10b981"),
+            borderRadius: 3
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          plugins: { legend: { display: false } },
+          scales: { x: { ticks: { callback: v => v + "%" } } }
+        }
+      });
+
+      const palette = ["#1f4e79", "#dc2626", "#d97706", "#15803d", "#6b4f8f", "#0891b2", "#64748b", "#be185d"];
+      const byCountry = groupCount(rows, "Country");
+      new Chart(document.getElementById("chart-country"), {
+        type: "doughnut",
+        data: { labels: Object.keys(byCountry), datasets: [{ data: Object.values(byCountry), backgroundColor: palette, borderWidth: 1 }] },
+        options: { plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } } } }
+      });
+
+      const byType = groupCount(rows, "Type");
+      const typeColors = Object.keys(byType).map(typeColor);
+      new Chart(document.getElementById("chart-type"), {
+        type: "doughnut",
+        data: { labels: Object.keys(byType), datasets: [{ data: Object.values(byType), backgroundColor: typeColors, borderWidth: 1 }] },
+        options: { plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } } } }
+      });
+
+      const byYear = {};
+      rows.forEach(r => {
+        const y = r["Actual ISD Year"];
+        if (!y) return;
+        const k = String(y).slice(0, 4);
+        byYear[k] = (byYear[k] || 0) + 1;
+      });
+      const years = Object.keys(byYear).sort();
+      new Chart(document.getElementById("chart-year"), {
+        type: "bar",
+        data: { labels: years, datasets: [{ label: "Completions", data: years.map(y => byYear[y]), backgroundColor: getCss("--accent"), borderRadius: 3 }] },
+        options: { plugins: { legend: { display: false } } }
+      });
+    }
+
+    function renderProjects(rows) {
+      const tableData = rows.map(r => {
+        const fid = num(r["FID Cost (when Approved)"]);
+        const fin = num(r["Final Cost"]);
+        const pct = (fid && fin && fid > 0) ? ((fin - fid) / fid * 100) : null;
+        return [
+          r["Project Name"] || "",
+          r["Type"] || "",
+          r["Sub Type"] || "",
+          r["Country"] || "",
+          r["Actual ISD Year"] || "",
+          fid != null ? fid.toFixed(2) : "",
+          fin != null ? fin.toFixed(2) : "",
+          pct != null ? pct.toFixed(1) : "",
+          r["Source"] || ""
+        ];
+      });
+
+      new gridjs.Grid({
+        columns: [
+          { name: "Project", width: "300px" },
+          { name: "Type", width: "110px" },
+          { name: "Sub Type", width: "140px" },
+          { name: "Country", width: "90px" },
+          { name: "In-Service", width: "90px" },
+          { name: "FID Cost ($B)", width: "90px" },
+          { name: "Final ($B)", width: "90px" },
+          {
+            name: "Overrun %", width: "100px",
+            formatter: (cell) => {
+              if (cell === "" || cell == null) return "";
+              const n = parseFloat(cell);
+              const cls = n > 50 ? "pill-overrun-high" : n > 20 ? "pill-overrun-mid" : "pill-overrun-low";
+              return gridjs.html('<span class="pill ' + cls + '">' + (n >= 0 ? "+" : "") + n.toFixed(1) + '%</span>');
+            }
+          },
+          {
+            name: "Source", width: "80px",
+            formatter: (cell) => cell ? gridjs.html('<a href="' + cell + '" target="_blank" rel="noopener">link</a>') : ""
+          }
+        ],
+        data: tableData,
+        sort: true,
+        search: true,
+        pagination: { enabled: true, limit: 25 }
+      }).render(document.getElementById("grid"));
+    }
+
+    function renderSchedule(rows) {
+      const gantt = rows
+        .map(r => {
+          const start = parseInt(r["Construction Start Year"]);
+          const end = parseInt(r["Actual ISD Year"]);
+          if (isNaN(start) || isNaN(end) || start <= 0 || end <= 0 || end < start) return null;
+          return { name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "", start, end, dur: end - start };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.end - a.end)
+        .slice(0, 30);
+
+      if (gantt.length === 0) {
+        document.getElementById("chart-gantt").parentElement.innerHTML =
+          '<div class="loading">No projects have both Construction Start Year and Actual ISD Year populated.</div>';
+        return;
+      }
+
+      const colors = gantt.map(g => typeColor(g.type));
+      const minYear = Math.min.apply(null, gantt.map(g => g.start)) - 1;
+      const maxYear = Math.max.apply(null, gantt.map(g => g.end)) + 1;
+
+      new Chart(document.getElementById("chart-gantt"), {
+        type: "bar",
+        data: {
+          labels: gantt.map(g => trunc(g.name, 42)),
+          datasets: [{
+            label: "Construction span",
+            data: gantt.map(g => [g.start, g.end]),
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 0,
+            borderRadius: 3,
+            barPercentage: 0.78
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const g = gantt[ctx.dataIndex];
+                  return g.start + " → " + g.end + "  (" + g.dur + " yrs, " + g.type + ", " + g.country + ")";
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: "linear",
+              position: "top",
+              min: minYear,
+              max: maxYear,
+              ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v : "" },
+              grid: { color: "#eee" }
+            },
+            y: {
+              ticks: { font: { size: 11 }, autoSkip: false },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      const types = [];
+      gantt.forEach(g => { if (types.indexOf(g.type) < 0) types.push(g.type); });
+      document.getElementById("gantt-legend").innerHTML = types.map(t =>
+        '<span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:' + typeColor(t) + '"></span>' + t + '</span>'
+      ).join("");
+    }
+  </script>
+</body>
+</html>
