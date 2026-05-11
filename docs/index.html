@@ -221,10 +221,13 @@
 
     function renderOverview(rows) {
       const total = rows.length;
-      const withFid = rows.filter(r => num(r["FID Cost (when Approved)"]) != null);
       const withFinal = rows.filter(r => num(r["Final Cost"]) != null);
-      const totalFid = withFid.reduce((s, r) => s + num(r["FID Cost (when Approved)"]), 0);
 
+      // Average cost (use Final Cost where present)
+      const finals = rows.map(r => num(r["Final Cost"])).filter(x => x != null && x > 0);
+      const avgCost = finals.length ? finals.reduce((s, c) => s + c, 0) / finals.length : 0;
+
+      // Cost overrun: (final - FID) / FID * 100
       const overruns = rows.map(r => {
         const fid = num(r["FID Cost (when Approved)"]);
         const fin = num(r["Final Cost"]);
@@ -232,6 +235,24 @@
         return { name: r["Project Name"], country: r.Country, type: r.Type, fid, fin, pct: (fin - fid) / fid * 100 };
       }).filter(Boolean);
       const avgOverrun = overruns.length ? overruns.reduce((s, o) => s + o.pct, 0) / overruns.length : 0;
+
+      // Avg duration: FID Year -> Actual ISD Year, in years
+      const durations = rows.map(r => {
+        const fid = parseInt(r["FID Year"]);
+        const isd = parseInt(r["Actual ISD Year"]);
+        if (isNaN(fid) || isNaN(isd) || fid <= 0 || isd <= 0 || isd < fid) return null;
+        return isd - fid;
+      }).filter(x => x != null);
+      const avgDuration = durations.length ? durations.reduce((s, d) => s + d, 0) / durations.length : 0;
+
+      // Avg schedule overrun: Actual ISD Year - FID ISD Year, in years (positive = late)
+      const slips = rows.map(r => {
+        const fidIsd = parseInt(r["FID ISD Year"]);
+        const actIsd = parseInt(r["Actual ISD Year"]);
+        if (isNaN(fidIsd) || isNaN(actIsd) || fidIsd <= 0 || actIsd <= 0) return null;
+        return actIsd - fidIsd;
+      }).filter(x => x != null);
+      const avgSlip = slips.length ? slips.reduce((s, d) => s + d, 0) / slips.length : 0;
 
       const recent = rows.filter(r => {
         const y = parseInt(r["Actual ISD Year"]);
@@ -241,8 +262,10 @@
       let html = "";
       html += '<div class="metrics">';
       html += '<div class="metric"><div class="metric-label">Projects tracked</div><div class="metric-value">' + total + '</div><div class="metric-sub">' + withFinal.length + ' have final cost data</div></div>';
-      html += '<div class="metric"><div class="metric-label">Total FID-approved</div><div class="metric-value">' + totalFid.toFixed(0) + 'B</div><div class="metric-sub">' + withFid.length + ' projects, mixed CAD/USD</div></div>';
+      html += '<div class="metric"><div class="metric-label">Average cost</div><div class="metric-value">$' + avgCost.toFixed(1) + 'B</div><div class="metric-sub">final cost, ' + finals.length + ' projects, mixed CAD/USD</div></div>';
+      html += '<div class="metric"><div class="metric-label">Avg duration</div><div class="metric-value">' + avgDuration.toFixed(1) + ' yrs</div><div class="metric-sub">FID to in-service, ' + durations.length + ' projects</div></div>';
       html += '<div class="metric"><div class="metric-label">Avg cost overrun</div><div class="metric-value" style="color: var(--bad)">' + (avgOverrun >= 0 ? "+" : "") + avgOverrun.toFixed(1) + '%</div><div class="metric-sub">final vs FID, ' + overruns.length + ' projects</div></div>';
+      html += '<div class="metric"><div class="metric-label">Avg schedule overrun</div><div class="metric-value" style="color: var(--bad)">' + (avgSlip >= 0 ? "+" : "") + avgSlip.toFixed(1) + ' yrs</div><div class="metric-sub">actual vs planned ISD, ' + slips.length + ' projects</div></div>';
       html += '<div class="metric"><div class="metric-label">Completed 2025–26</div><div class="metric-value">' + recent + '</div><div class="metric-sub">in active research window</div></div>';
       html += '</div>';
       html += '<div class="charts">';
