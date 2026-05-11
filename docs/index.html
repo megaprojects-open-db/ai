@@ -105,6 +105,11 @@
   .noUi-handle:before, .noUi-handle:after { display: none; }
   .noUi-handle:active { cursor: grabbing; }
   .noUi-handle:focus { outline: 2px solid var(--accent-light); }
+  .chart-detail { margin-top: 12px; padding: 12px 14px; background: var(--accent-light); border: 1px solid #cfdcec; border-radius: 6px; font-size: 13px; color: var(--text); display: none; }
+  .chart-detail.active { display: block; }
+  .chart-detail .name { font-weight: 600; margin-bottom: 4px; }
+  .chart-detail .meta { color: var(--text-muted); }
+  .chart-detail .close { float: right; cursor: pointer; color: var(--muted); background: transparent; border: none; font-size: 16px; line-height: 1; }
 </style>
 </head>
 <body>
@@ -474,7 +479,7 @@
       html += '<div class="chart-card donut"><h2>Projects by country</h2><div class="canvas-wrap"><canvas id="chart-country"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
       html += '<div class="chart-card donut"><h2>Projects by type</h2><div class="canvas-wrap"><canvas id="chart-type"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
       html += '<div class="chart-card donut"><h2>Projects by sub type</h2><div class="canvas-wrap"><canvas id="chart-subtype"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
-      html += '<div class="chart-card chart-wide"><h2>Completions by year &amp; cost (dot per project, jittered to avoid overlap)</h2><canvas id="chart-year"></canvas></div>';
+      html += '<div class="chart-card chart-wide"><h2>Completions by year &amp; cost (dot per project, jittered to avoid overlap)</h2><canvas id="chart-year"></canvas><div class="chart-detail" id="chart-year-detail"></div></div>';
       html += '</div>';
       html += '<div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Data is compiled from public sources with LLM research assistance — not independently verified. See <a href="#" id="link-about" style="color: var(--accent);">About &amp; methodology</a>.</div>';
       overview.innerHTML = html;
@@ -561,7 +566,14 @@
         }
         if (isNaN(cost) || cost <= 0) return;
         const t = ((r.Type || "Other") + "").trim() || "Other";
-        dots.push({ year: y, cost: cost, costSource, type: t, name: r["Project Name"] || "", country: r.Country || "" });
+        dots.push({
+          year: y, cost: cost, costSource, type: t,
+          name: r["Project Name"] || "",
+          country: r.Country || "",
+          subType: (r["Sub Type"] || "").trim(),
+          company: (r["Company"] || r["Company "] || "").trim(),
+          source: (r["Source"] || "").trim()
+        });
       });
 
       // Group by year and jitter x within each year so overlapping dots spread out.
@@ -605,16 +617,37 @@
         data: { datasets: dotDatasets },
         options: {
           maintainAspectRatio: false,
+          interaction: { mode: "nearest", intersect: true },
           plugins: {
             legend: { position: "bottom", labels: { font: { size: 11 }, boxWidth: 12 } },
             tooltip: {
               callbacks: {
+                title: () => "",
                 label: (ctx) => {
                   const d = ctx.raw._meta;
-                  const costStr = "$" + d.cost.toFixed(2) + "B" + (d.costSource === "FID" ? " (FID, no final)" : "");
-                  return [d.name, "Year: " + d.year + "  -  " + d.type + (d.country ? " (" + d.country + ")" : ""), "Cost: " + costStr];
+                  const costStr = "$" + d.cost.toFixed(2) + "B" + (d.costSource === "FID" ? " (FID est.)" : "");
+                  return [d.name, "Year " + d.year + " · " + d.type + (d.country ? " · " + d.country : ""), "Cost: " + costStr];
                 }
               }
+            }
+          },
+          onClick: (evt, els, chart) => {
+            const panel = document.getElementById("chart-year-detail");
+            if (els.length) {
+              const d = els[0].element.$context.raw._meta;
+              const subType = d.subType ? " · " + d.subType : "";
+              const company = d.company ? "<div class=\"meta\">Owner: " + d.company + "</div>" : "";
+              const sourceLink = d.source ? '<div class="meta">Source: <a href="' + d.source + '" target="_blank" rel="noopener" style="color: var(--accent)">' + (d.source.length > 60 ? d.source.slice(0, 57) + "..." : d.source) + "</a></div>" : "";
+              const costStr = "$" + d.cost.toFixed(2) + "B" + (d.costSource === "FID" ? " (FID estimate, no final cost yet)" : " (final)");
+              panel.innerHTML = '<button class="close" aria-label="Close">×</button>' +
+                '<div class="name">' + d.name + '</div>' +
+                '<div class="meta">Completed ' + d.year + ' · ' + d.type + subType + ' · ' + d.country + '</div>' +
+                '<div class="meta">Cost: ' + costStr + '</div>' +
+                company + sourceLink;
+              panel.classList.add("active");
+              panel.querySelector(".close").addEventListener("click", () => panel.classList.remove("active"));
+            } else {
+              panel.classList.remove("active");
             }
           },
           scales: {
@@ -622,9 +655,18 @@
                  title: { display: true, text: "Completion year (Actual ISD)", color: "#5b5b58", font: { size: 12 } },
                  ticks: { stepSize: 1, autoSkip: false, maxRotation: 0, font: { size: 11, weight: "bold" }, color: "#000", callback: function(v) { return String(v); } },
                  grid: { color: "#eee" } },
-            y: { type: "linear", beginAtZero: true,
-                 title: { display: true, text: "Cost ($B)", color: "#5b5b58", font: { size: 12 } },
-                 ticks: { callback: v => "$" + v + "B" },
+            y: { type: "logarithmic",
+                 title: { display: true, text: "Cost ($B, log scale)", color: "#5b5b58", font: { size: 12 } },
+                 ticks: {
+                   color: "#000",
+                   font: { size: 11, weight: "bold" },
+                   callback: function(v) {
+                     // Show only powers of 10 and a few major values on log scale
+                     const allowed = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
+                     if (allowed.indexOf(v) >= 0) return "$" + (v < 1 ? v.toFixed(1) : v) + "B";
+                     return "";
+                   }
+                 },
                  grid: { color: "#eee" } }
           }
         }
