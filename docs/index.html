@@ -474,7 +474,7 @@
       html += '<div class="chart-card donut"><h2>Projects by country</h2><div class="canvas-wrap"><canvas id="chart-country"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
       html += '<div class="chart-card donut"><h2>Projects by type</h2><div class="canvas-wrap"><canvas id="chart-type"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
       html += '<div class="chart-card donut"><h2>Projects by sub type</h2><div class="canvas-wrap"><canvas id="chart-subtype"></canvas></div><div class="filter-hint">Click a slice to filter</div></div>';
-      html += '<div class="chart-card chart-wide"><h2>Completed by year (stacked by type)</h2><canvas id="chart-year"></canvas></div>';
+      html += '<div class="chart-card chart-wide"><h2>Completions by year &amp; cost (dot per project, jittered to avoid overlap)</h2><canvas id="chart-year"></canvas></div>';
       html += '</div>';
       html += '<div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Data is compiled from public sources with LLM research assistance — not independently verified. See <a href="#" id="link-about" style="color: var(--accent);">About &amp; methodology</a>.</div>';
       overview.innerHTML = html;
@@ -550,38 +550,82 @@
         }
       });
 
-      // Stacked bar: completed by year, segmented by Type
-      const yearMatrix = {};
-      const typesSeen = new Set();
+      // Scatter: one dot per project, jittered within year, colored by Type.
+      // Y axis = Final Cost (fallback FID Cost). Skip projects with no completion year or no cost.
+      const dots = [];
       rows.forEach(r => {
-        const y = r["Actual ISD Year"]; if (!y) return;
-        const k = String(y).slice(0, 4);
+        const y = parseInt(r["Actual ISD Year"]); if (isNaN(y) || y <= 0) return;
+        let cost = parseFloat(r["Final Cost"]); let costSource = "final";
+        if (isNaN(cost) || cost <= 0) {
+          cost = parseFloat(r["FID Cost (when Approved)"]); costSource = "FID";
+        }
+        if (isNaN(cost) || cost <= 0) return;
         const t = ((r.Type || "Other") + "").trim() || "Other";
-        if (!yearMatrix[k]) yearMatrix[k] = {};
-        yearMatrix[k][t] = (yearMatrix[k][t] || 0) + 1;
-        typesSeen.add(t);
+        dots.push({ year: y, cost: cost, costSource, type: t, name: r["Project Name"] || "", country: r.Country || "" });
       });
-      const years = Object.keys(yearMatrix).sort();
-      const typeList = [...typesSeen].sort();
-      const datasets = typeList.map(t => ({
+
+      // Group by year and jitter x within each year so overlapping dots spread out.
+      const byYear = {};
+      dots.forEach(d => { (byYear[d.year] = byYear[d.year] || []).push(d); });
+      Object.values(byYear).forEach(arr => {
+        // Sort within year by cost descending so jitter pattern is stable
+        arr.sort((a, b) => b.cost - a.cost);
+        const n = arr.length;
+        arr.forEach((d, i) => {
+          if (n === 1) { d.x = d.year; }
+          else {
+            // Spread n dots evenly in ±0.35 of the year
+            const span = Math.min(0.7, 0.12 * (n - 1));
+            const t = (i / (n - 1)) - 0.5;  // -0.5 to +0.5
+            d.x = d.year + t * span;
+          }
+        });
+      });
+
+      // Group dots by type into Chart.js datasets so colors + legend work
+      const dotsByType = {};
+      dots.forEach(d => { (dotsByType[d.type] = dotsByType[d.type] || []).push(d); });
+      const dotTypeList = Object.keys(dotsByType).sort();
+      const dotDatasets = dotTypeList.map(t => ({
         label: t,
-        data: years.map(y => yearMatrix[y][t] || 0),
-        backgroundColor: typeColor(t),
-        borderRadius: 2,
-        borderWidth: 0
+        data: dotsByType[t].map(d => ({ x: d.x, y: d.cost, _meta: d })),
+        backgroundColor: typeColor(t) + "cc",  // ~80% opacity
+        borderColor: typeColor(t),
+        borderWidth: 1,
+        pointRadius: 5,
+        pointHoverRadius: 7
       }));
+
+      let minYear = Infinity, maxYear = -Infinity;
+      dots.forEach(d => { if (d.year < minYear) minYear = d.year; if (d.year > maxYear) maxYear = d.year; });
+      if (!isFinite(minYear)) { minYear = 2000; maxYear = 2026; }
+
       makeChart("chart-year", {
-        type: "bar",
-        data: { labels: years, datasets: datasets },
+        type: "scatter",
+        data: { datasets: dotDatasets },
         options: {
           maintainAspectRatio: false,
           plugins: {
             legend: { position: "bottom", labels: { font: { size: 11 }, boxWidth: 12 } },
-            tooltip: { mode: "index", intersect: false }
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const d = ctx.raw._meta;
+                  const costStr = "$" + d.cost.toFixed(2) + "B" + (d.costSource === "FID" ? " (FID, no final)" : "");
+                  return [d.name, "Year: " + d.year + "  -  " + d.type + (d.country ? " (" + d.country + ")" : ""), "Cost: " + costStr];
+                }
+              }
+            }
           },
           scales: {
-            x: { stacked: true },
-            y: { stacked: true, ticks: { precision: 0 }, beginAtZero: true }
+            x: { type: "linear", min: minYear - 0.5, max: maxYear + 0.5,
+                 title: { display: true, text: "Completion year (Actual ISD)", color: "#5b5b58", font: { size: 12 } },
+                 ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v : "" },
+                 grid: { color: "#eee" } },
+            y: { type: "linear", beginAtZero: true,
+                 title: { display: true, text: "Cost ($B)", color: "#5b5b58", font: { size: 12 } },
+                 ticks: { callback: v => "$" + v + "B" },
+                 grid: { color: "#eee" } }
           }
         }
       });
