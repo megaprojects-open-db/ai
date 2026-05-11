@@ -58,7 +58,7 @@
   .chart-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
   .chart-card canvas { width: 100% !important; height: 280px !important; }
   .chart-card.chart-wide { grid-column: 1 / -1; }
-  .chart-card.chart-wide canvas { height: 320px !important; }
+  .chart-card.chart-wide canvas { height: 500px !important; }
   /* Doughnut: force square via aspect-ratio, centered, capped width so it looks clean on wide screens */
   .chart-card.donut .canvas-wrap { max-width: 280px; margin: 0 auto; width: 100%; aspect-ratio: 1 / 1; position: relative; cursor: pointer; }
   .chart-card.donut canvas { width: 100% !important; height: 100% !important; }
@@ -620,7 +620,7 @@
           scales: {
             x: { type: "linear", min: minYear - 0.5, max: maxYear + 0.5,
                  title: { display: true, text: "Completion year (Actual ISD)", color: "#5b5b58", font: { size: 12 } },
-                 ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v : "" },
+                 ticks: { stepSize: 1, autoSkip: false, maxRotation: 0, callback: v => Number.isInteger(v) ? v : "" },
                  grid: { color: "#eee" } },
             y: { type: "linear", beginAtZero: true,
                  title: { display: true, text: "Cost ($B)", color: "#5b5b58", font: { size: 12 } },
