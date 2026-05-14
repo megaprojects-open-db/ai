@@ -249,6 +249,7 @@
     const filters = { Country: null, Type: null, SubType: null, YearRange: null, CostRange: null };
     let yearBounds = null;  // [min, max] of Actual ISD Year in data
     let costBounds = null;  // [min, max] of Final Cost in data
+    const typeToSubtypes = {};  // { "Generation": Set<"Wind", "Hydro Generation", ...>, ... }
     const chartInstances = {};
     let projectsGrid = null;
 
@@ -319,19 +320,31 @@
       .catch(err => { console.error("Load error:", err); showError(err.message, overview); });
 
     function populateFilters(rows) {
+      // Build Type -> set of Sub Types so the Sub Type dropdown can react to Type selection
+      Object.keys(typeToSubtypes).forEach(k => delete typeToSubtypes[k]);
+      rows.forEach(r => {
+        const t = (r.Type || "").trim(); const s = (r["Sub Type"] || "").trim();
+        if (!t || !s) return;
+        if (!typeToSubtypes[t]) typeToSubtypes[t] = new Set();
+        typeToSubtypes[t].add(s);
+      });
+
       const countries = [...new Set(rows.map(r => (r.Country || "").trim()).filter(Boolean))].sort();
       const types = [...new Set(rows.map(r => (r.Type || "").trim()).filter(Boolean))].sort();
-      const subtypes = [...new Set(rows.map(r => (r["Sub Type"] || "").trim()).filter(Boolean))].sort();
 
       const cSel = document.getElementById("filter-country");
       cSel.innerHTML = '<option value="">All countries</option>' + countries.map(c => '<option value="' + c + '">' + c + '</option>').join("");
       const tSel = document.getElementById("filter-type");
       tSel.innerHTML = '<option value="">All types</option>' + types.map(t => '<option value="' + t + '">' + t + '</option>').join("");
-      const sSel = document.getElementById("filter-subtype");
-      sSel.innerHTML = '<option value="">All sub types</option>' + subtypes.map(s => '<option value="' + s + '">' + s + '</option>').join("");
+      refreshSubtypeOptions();  // initial populate (all sub types)
 
       cSel.addEventListener("change", e => { filters.Country = e.target.value || null; applyFilters(); });
-      tSel.addEventListener("change", e => { filters.Type = e.target.value || null; applyFilters(); });
+      tSel.addEventListener("change", e => {
+        filters.Type = e.target.value || null;
+        refreshSubtypeOptions();
+        applyFilters();
+      });
+      const sSel = document.getElementById("filter-subtype");
       sSel.addEventListener("change", e => { filters.SubType = e.target.value || null; applyFilters(); });
 
       // Year slider — based on Actual ISD Year
@@ -389,17 +402,40 @@
       document.getElementById("filter-clear").addEventListener("click", () => {
         filters.Country = null; filters.Type = null; filters.SubType = null;
         filters.YearRange = null; filters.CostRange = null;
-        cSel.value = ""; tSel.value = ""; sSel.value = "";
+        cSel.value = ""; tSel.value = "";
+        refreshSubtypeOptions();
         if (yearBounds) document.getElementById("slider-year").noUiSlider.set(yearBounds);
         if (costBounds) document.getElementById("slider-cost").noUiSlider.set(costBounds);
         applyFilters();
       });
     }
 
+    function refreshSubtypeOptions() {
+      const sSel = document.getElementById("filter-subtype");
+      if (!sSel) return;
+      let validSubs;
+      if (filters.Type && typeToSubtypes[filters.Type]) {
+        validSubs = [...typeToSubtypes[filters.Type]].sort();
+      } else {
+        const all = new Set();
+        Object.values(typeToSubtypes).forEach(set => set.forEach(s => all.add(s)));
+        validSubs = [...all].sort();
+      }
+      sSel.innerHTML = '<option value="">All sub types</option>' + validSubs.map(s => '<option value="' + s + '">' + s + '</option>').join("");
+      if (filters.SubType && validSubs.indexOf(filters.SubType) >= 0) {
+        sSel.value = filters.SubType;
+      } else if (filters.SubType) {
+        // Current SubType is no longer valid under the new Type — silently drop it
+        filters.SubType = null;
+        sSel.value = "";
+      }
+    }
+
     function setFilter(key, value) {
       if (filters[key] === value) { filters[key] = null; } else { filters[key] = value; }
       const sel = document.getElementById("filter-" + key.toLowerCase());
       if (sel) sel.value = filters[key] || "";
+      if (key === "Type") refreshSubtypeOptions();
       applyFilters();
     }
 
@@ -451,7 +487,7 @@
     function clearOneFilter(key) {
       filters[key] = null;
       if (key === "Country") document.getElementById("filter-country").value = "";
-      else if (key === "Type") document.getElementById("filter-type").value = "";
+      else if (key === "Type") { document.getElementById("filter-type").value = ""; refreshSubtypeOptions(); }
       else if (key === "SubType") document.getElementById("filter-subtype").value = "";
       else if (key === "YearRange" && yearBounds) document.getElementById("slider-year").noUiSlider.set(yearBounds);
       else if (key === "CostRange" && costBounds) document.getElementById("slider-cost").noUiSlider.set(costBounds);
