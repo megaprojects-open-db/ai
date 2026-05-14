@@ -282,6 +282,14 @@
       if (k.startsWith("indus")) return getCss("--type-industrial");
       return getCss("--type-other");
     }
+    function typeShape(t) {
+      const k = (t || "").trim().toLowerCase();
+      if (k.startsWith("gen")) return "circle";
+      if (k.startsWith("trans") && k.indexOf("port") >= 0) return "rectRot";  // diamond
+      if (k.startsWith("trans")) return "triangle";
+      if (k.startsWith("indus")) return "rect";  // square
+      return "crossRot";  // X for Other
+    }
 
     const overview = document.getElementById("overview-content");
 
@@ -613,10 +621,11 @@
         data: dotsByType[t].map(d => ({ x: d.x, y: d.cost, _meta: d })),
         backgroundColor: typeColor(t) + "cc",  // ~80% opacity
         borderColor: typeColor(t),
-        borderWidth: 1,
-        pointRadius: 6,
-        pointHoverRadius: 9,
-        pointHitRadius: 12
+        borderWidth: 1.5,
+        pointStyle: typeShape(t),
+        pointRadius: 7,
+        pointHoverRadius: 10,
+        pointHitRadius: 14
       }));
 
       let minYear = Infinity, maxYear = -Infinity;
@@ -630,7 +639,10 @@
           maintainAspectRatio: false,
           interaction: { mode: "nearest", intersect: false, axis: "xy" },
           plugins: {
-            legend: { position: "bottom", labels: { font: { size: 11 }, boxWidth: 12 } },
+            legend: { position: "top", align: "end", labels: { font: { size: 12 }, padding: 14, usePointStyle: true, pointStyle: "circle", boxWidth: 8, generateLabels: (chart) => {
+              const orig = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+              return orig.map((lbl, i) => { lbl.pointStyle = chart.data.datasets[i].pointStyle; return lbl; });
+            } } },
             tooltip: {
               callbacks: {
                 title: () => "",
