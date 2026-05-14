@@ -19,7 +19,11 @@
   * { box-sizing: border-box; }
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; -webkit-font-smoothing: antialiased; }
   .container { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
-  header { margin-bottom: 18px; }
+  header { margin-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .header-titles { flex: 1 1 400px; min-width: 0; }
+  .header-meta { text-align: right; flex: 0 0 auto; }
+  .header-meta .visitor-since { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  @media (max-width: 640px) { .header-meta { text-align: left; } }
   h1 { margin: 0 0 6px 0; font-size: 30px; font-weight: 600; letter-spacing: -0.5px; }
   .tagline { color: var(--text-muted); font-size: 15px; margin: 0; max-width: 720px; }
   .last-updated { font-size: 12px; color: var(--muted); margin-top: 10px; }
@@ -115,12 +119,15 @@
 <body>
   <div class="container">
     <header>
-      <h1>Mega Projects Open Database</h1>
-      <p class="tagline">Cost and schedule performance of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia.</p>
-      <p class="last-updated" id="last-updated">Loading data...</p>
-      <p class="last-updated" style="margin-top: 6px;">
-        <img src="https://hits.sh/megaprojects-open-db.github.io-ai.svg?style=flat-square&label=visitors&color=1f4e79" alt="Visitor count" style="vertical-align: middle;" />
-      </p>
+      <div class="header-titles">
+        <h1>Mega Projects Open Database</h1>
+        <p class="tagline">Cost and schedule performance of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia.</p>
+        <p class="last-updated" id="last-updated">Loading data...</p>
+      </div>
+      <div class="header-meta">
+        <img src="https://hits.sh/megaprojects-open-db.github.io-ai.svg?style=flat-square&label=visitors&color=1f4e79" alt="Visitor count" />
+        <div class="visitor-since">since May 2026</div>
+      </div>
     </header>
 
     <div class="filters">
