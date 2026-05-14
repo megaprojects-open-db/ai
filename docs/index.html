@@ -118,6 +118,9 @@
       <h1>Mega Projects Open Database</h1>
       <p class="tagline">Cost and schedule performance of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia.</p>
       <p class="last-updated" id="last-updated">Loading data...</p>
+      <p class="last-updated" style="margin-top: 6px;">
+        <img src="https://hits.sh/megaprojects-open-db.github.io-ai.svg?style=flat-square&label=visitors&color=1f4e79" alt="Visitor count" style="vertical-align: middle;" />
+      </p>
     </header>
 
     <div class="filters">
@@ -604,8 +607,9 @@
         backgroundColor: typeColor(t) + "cc",  // ~80% opacity
         borderColor: typeColor(t),
         borderWidth: 1,
-        pointRadius: 5,
-        pointHoverRadius: 7
+        pointRadius: 6,
+        pointHoverRadius: 9,
+        pointHitRadius: 12
       }));
 
       let minYear = Infinity, maxYear = -Infinity;
@@ -617,7 +621,7 @@
         data: { datasets: dotDatasets },
         options: {
           maintainAspectRatio: false,
-          interaction: { mode: "nearest", intersect: true },
+          interaction: { mode: "nearest", intersect: false, axis: "xy" },
           plugins: {
             legend: { position: "bottom", labels: { font: { size: 11 }, boxWidth: 12 } },
             tooltip: {
