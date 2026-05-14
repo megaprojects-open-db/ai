@@ -109,11 +109,19 @@
   .noUi-handle:before, .noUi-handle:after { display: none; }
   .noUi-handle:active { cursor: grabbing; }
   .noUi-handle:focus { outline: 2px solid var(--accent-light); }
-  .chart-detail { margin-top: 12px; padding: 12px 14px; background: var(--accent-light); border: 1px solid #cfdcec; border-radius: 6px; font-size: 13px; color: var(--text); display: none; }
+  .chart-detail { margin-top: 12px; padding: 14px 16px; background: var(--accent-light); border: 1px solid #cfdcec; border-radius: 6px; font-size: 13px; color: var(--text); display: none; }
   .chart-detail.active { display: block; }
-  .chart-detail .name { font-weight: 600; margin-bottom: 4px; }
-  .chart-detail .meta { color: var(--text-muted); }
-  .chart-detail .close { float: right; cursor: pointer; color: var(--muted); background: transparent; border: none; font-size: 16px; line-height: 1; }
+  .chart-detail .name { font-weight: 600; font-size: 15px; margin-bottom: 4px; padding-right: 24px; }
+  .chart-detail .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 4px 18px; margin: 10px 0 8px; }
+  .chart-detail .detail-grid > div { font-size: 13px; }
+  .chart-detail .detail-grid strong { color: var(--text-muted); font-weight: 500; }
+  .chart-detail .meta { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+  .chart-detail .source-row { margin-top: 12px; padding-top: 10px; border-top: 1px solid #cfdcec; }
+  .chart-detail .source-link { display: inline-block; background: var(--accent); color: #fff !important; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; }
+  .chart-detail .source-link:hover { background: var(--accent-hover); }
+  .chart-detail .no-source { color: var(--muted); font-size: 12px; font-style: italic; }
+  .chart-detail .close { float: right; cursor: pointer; color: var(--muted); background: transparent; border: none; font-size: 18px; line-height: 1; padding: 0 4px; }
+  .chart-detail .close:hover { color: var(--bad); }
 </style>
 </head>
 <body>
@@ -584,13 +592,19 @@
         }
         if (isNaN(cost) || cost <= 0) return;
         const t = ((r.Type || "Other") + "").trim() || "Other";
+        const fidCostRaw = parseFloat(r["FID Cost (when Approved)"]);
+        const finalCostRaw = parseFloat(r["Final Cost"]);
         dots.push({
           year: y, cost: cost, costSource, type: t,
           name: r["Project Name"] || "",
           country: r.Country || "",
           subType: (r["Sub Type"] || "").trim(),
           company: (r["Company"] || r["Company "] || "").trim(),
-          source: (r["Source"] || "").trim()
+          source: (r["Source"] || "").trim(),
+          fidCost: (isNaN(fidCostRaw) || fidCostRaw <= 0) ? null : fidCostRaw,
+          finalCost: (isNaN(finalCostRaw) || finalCostRaw <= 0) ? null : finalCostRaw,
+          fidIsdYear: (r["FID ISD Year"] || "").toString().trim(),
+          actualIsdYear: (r["Actual ISD Year"] || "").toString().trim()
         });
       });
 
@@ -648,8 +662,14 @@
                 title: () => "",
                 label: (ctx) => {
                   const d = ctx.raw._meta;
-                  const costStr = "$" + d.cost.toFixed(2) + "B" + (d.costSource === "FID" ? " (FID est.)" : "");
-                  return [d.name, "Year " + d.year + " · " + d.type + (d.country ? " · " + d.country : ""), "Cost: " + costStr];
+                  const fidStr = d.fidCost != null ? "$" + d.fidCost.toFixed(2) + "B" : "—";
+                  const finStr = d.finalCost != null ? "$" + d.finalCost.toFixed(2) + "B" : "—";
+                  return [
+                    d.name,
+                    d.type + (d.country ? " · " + d.country : ""),
+                    "FID cost: " + fidStr + "   Final: " + finStr,
+                    "Planned ISD: " + (d.fidIsdYear || "—") + "   Actual: " + (d.actualIsdYear || "—")
+                  ];
                 }
               }
             }
@@ -659,14 +679,41 @@
             if (els.length) {
               const d = els[0].element.$context.raw._meta;
               const subType = d.subType ? " · " + d.subType : "";
-              const company = d.company ? "<div class=\"meta\">Owner: " + d.company + "</div>" : "";
-              const sourceLink = d.source ? '<div class="meta">Source: <a href="' + d.source + '" target="_blank" rel="noopener" style="color: var(--accent)">' + (d.source.length > 60 ? d.source.slice(0, 57) + "..." : d.source) + "</a></div>" : "";
-              const costStr = "$" + d.cost.toFixed(2) + "B" + (d.costSource === "FID" ? " (FID estimate, no final cost yet)" : " (final)");
+              const fidCostStr = d.fidCost != null ? "$" + d.fidCost.toFixed(2) + "B" : "—";
+              const finCostStr = d.finalCost != null ? "$" + d.finalCost.toFixed(2) + "B" : "—";
+              let overrunStr = "—";
+              if (d.fidCost != null && d.finalCost != null && d.fidCost > 0) {
+                const pct = (d.finalCost - d.fidCost) / d.fidCost * 100;
+                overrunStr = (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
+              }
+              let slipStr = "—";
+              if (d.fidIsdYear && d.actualIsdYear) {
+                const slipY = parseInt(d.actualIsdYear) - parseInt(d.fidIsdYear);
+                if (!isNaN(slipY)) slipStr = (slipY > 0 ? "+" : "") + slipY + " yr" + (Math.abs(slipY) === 1 ? "" : "s");
+              }
+              const company = d.company ? '<div class="meta"><strong style="color: var(--text-muted); font-weight: 500;">Owner:</strong> ' + d.company + '</div>' : "";
+              let sourceBlock;
+              if (d.source && /^https?:\/\//.test(d.source)) {
+                sourceBlock = '<a class="source-link" href="' + d.source + '" target="_blank" rel="noopener">Verify at source ↗</a>';
+              } else if (d.source) {
+                sourceBlock = '<span class="no-source">Source: ' + d.source + '</span>';
+              } else {
+                sourceBlock = '<span class="no-source">No source URL available for this row</span>';
+              }
               panel.innerHTML = '<button class="close" aria-label="Close">×</button>' +
                 '<div class="name">' + d.name + '</div>' +
-                '<div class="meta">Completed ' + d.year + ' · ' + d.type + subType + ' · ' + d.country + '</div>' +
-                '<div class="meta">Cost: ' + costStr + '</div>' +
-                company + sourceLink;
+                '<div class="detail-grid">' +
+                  '<div><strong>Type:</strong> ' + d.type + subType + '</div>' +
+                  '<div><strong>Country:</strong> ' + (d.country || "—") + '</div>' +
+                  '<div><strong>FID cost:</strong> ' + fidCostStr + '</div>' +
+                  '<div><strong>Final cost:</strong> ' + finCostStr + '</div>' +
+                  '<div><strong>Planned ISD:</strong> ' + (d.fidIsdYear || "—") + '</div>' +
+                  '<div><strong>Actual ISD:</strong> ' + (d.actualIsdYear || "—") + '</div>' +
+                  '<div><strong>Cost overrun:</strong> ' + overrunStr + '</div>' +
+                  '<div><strong>Schedule slip:</strong> ' + slipStr + '</div>' +
+                '</div>' +
+                company +
+                '<div class="source-row">' + sourceBlock + '</div>';
               panel.classList.add("active");
               panel.querySelector(".close").addEventListener("click", () => panel.classList.remove("active"));
             } else {
