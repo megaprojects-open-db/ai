@@ -16,6 +16,74 @@
     --type-generation: #1f4e79; --type-transmission: #6b4f8f;
     --type-transportation: #d97706; --type-industrial: #15803d; --type-other: #64748b;
   }
+
+  /* ── Project Details tab ─────────────────────────────────────────── */
+  .details-search-wrap {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .details-search-wrap label { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .details-search-input {
+    flex: 1 1 260px; padding: 9px 13px; border: 1px solid var(--border-strong);
+    border-radius: 6px; font-size: 14px; background: #fff; color: var(--text);
+  }
+  .details-search-input:focus { outline: 2px solid var(--accent-light); border-color: var(--accent); }
+  .details-hint { font-size: 12px; color: var(--muted); }
+  .details-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 24px 28px;
+  }
+  .details-card-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .details-project-name { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .details-copy-btn {
+    flex: 0 0 auto; padding: 6px 12px; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border-strong); border-radius: 6px; background: #fff;
+    cursor: pointer; color: var(--text-muted); white-space: nowrap;
+  }
+  .details-copy-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .details-summary { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+  .details-summary-tile {
+    flex: 1 1 200px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px 16px;
+  }
+  .details-summary-tile .tile-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-muted); font-weight: 700; margin-bottom: 5px;
+  }
+  .details-summary-tile .tile-val { font-size: 18px; font-weight: 700; line-height: 1.25; }
+  .details-summary-tile .tile-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .details-sections {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px;
+  }
+  .details-section h3 {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--text-muted); font-weight: 700; margin: 0 0 10px 0;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  .details-field { margin-bottom: 10px; }
+  .details-field-label { font-size: 11px; color: var(--muted); font-weight: 500; display: block; margin-bottom: 1px; }
+  .details-field-value { font-size: 14px; color: var(--text); display: block; }
+  .details-full-width { grid-column: 1 / -1; }
+  .details-scope {
+    background: var(--bg); border-left: 3px solid var(--accent-light);
+    border-radius: 0 4px 4px 0; padding: 10px 14px;
+    font-size: 13px; color: var(--text-muted); margin-top: 4px; line-height: 1.55;
+  }
+  .details-note {
+    background: #fffbe6; border-left: 3px solid #d97706;
+    border-radius: 0 4px 4px 0; padding: 10px 14px;
+    font-size: 13px; color: #78350f; margin-top: 4px; line-height: 1.55;
+  }
+  .details-source-link { color: var(--accent); text-decoration: none; word-break: break-all; }
+  .details-source-link:hover { text-decoration: underline; }
+  .details-empty {
+    color: var(--muted); font-size: 14px; font-style: italic;
+    padding: 48px 0; text-align: center;
+  }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; -webkit-font-smoothing: antialiased; }
   .container { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
@@ -161,8 +229,9 @@
 
     <nav class="tabs" id="tabs">
       <button data-tab="overview" class="active">Overview</button>
-      <button data-tab="projects">Projects</button>
       <button data-tab="schedule">Schedule</button>
+      <button data-tab="details">Project Details</button>
+      <button data-tab="projects">Project List</button>
       <button data-tab="about">About &amp; methodology</button>
     </nav>
 
@@ -172,6 +241,21 @@
 
     <div id="tab-projects" class="tab-panel">
       <div class="table-card"><h2>All projects</h2><div id="grid"></div></div>
+    </div>
+
+    <div id="tab-details" class="tab-panel">
+      <div class="details-search-wrap">
+        <label for="details-search">Project name</label>
+        <input type="text" id="details-search" class="details-search-input"
+               list="details-project-list"
+               placeholder="Type or select a project name…"
+               autocomplete="off">
+        <datalist id="details-project-list"></datalist>
+        <span class="details-hint">Showing all projects regardless of active filters</span>
+      </div>
+      <div id="details-panel">
+        <div class="details-empty">Select a project above to see its full details.</div>
+      </div>
     </div>
 
     <div id="tab-schedule" class="tab-panel">
@@ -235,13 +319,16 @@
     const CSV_URL = "https://raw.githubusercontent.com/megaprojects-open-db/ai/main/data/master.csv";
 
     // Tab switching
+    function switchTab(tabName) {
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      const btn = document.querySelector('.tabs button[data-tab="' + tabName + '"]');
+      if (btn) btn.classList.add("active");
+      const panel = document.getElementById("tab-" + tabName);
+      if (panel) panel.classList.add("active");
+    }
     document.querySelectorAll(".tabs button").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
-        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-        btn.classList.add("active");
-        document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-      });
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
 
     // Global state
@@ -316,6 +403,17 @@
 
         populateFilters(allRows);
         applyFilters();
+        initDetails();
+        // Handle URL params: ?project=Name&tab=details
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlProject = urlParams.get("project");
+        const urlTab = urlParams.get("tab");
+        if (urlTab) switchTab(urlTab);
+        if (urlProject) {
+          const inp = document.getElementById("details-search");
+          if (inp) { inp.value = urlProject; showProjectDetail(urlProject); }
+          if (!urlTab) switchTab("details");
+        }
       })
       .catch(err => { console.error("Load error:", err); showError(err.message, overview); });
 
@@ -862,6 +960,193 @@
       document.getElementById("gantt-legend").innerHTML = types.map(t =>
         '<span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:' + typeColor(t) + '"></span>' + t + '</span>'
       ).join("");
+    }
+
+    // ── Project Details tab ────────────────────────────────────────────────
+    function initDetails() {
+      const dl = document.getElementById("details-project-list");
+      if (!dl) return;
+      dl.innerHTML = "";
+      allRows.slice()
+        .sort((a, b) => (a["Project Name"] || "").localeCompare(b["Project Name"] || ""))
+        .forEach(r => {
+          const opt = document.createElement("option");
+          opt.value = r["Project Name"] || "";
+          dl.appendChild(opt);
+        });
+      const inp = document.getElementById("details-search");
+      if (!inp) return;
+      // Fire on both input (typing) and change (datalist pick)
+      function onProjectInput() {
+        const val = inp.value.trim();
+        // Only render when value matches a known project exactly
+        const match = allRows.find(r => r["Project Name"] === val);
+        if (match) showProjectDetail(val);
+        else if (!val) {
+          document.getElementById("details-panel").innerHTML =
+            '<div class="details-empty">Select a project above to see its full details.</div>';
+          history.replaceState(null, "", window.location.pathname);
+        }
+      }
+      inp.addEventListener("change", onProjectInput);
+      inp.addEventListener("input",  onProjectInput);
+    }
+
+    function showProjectDetail(name) {
+      const panel = document.getElementById("details-panel");
+      if (!name || !name.trim()) {
+        panel.innerHTML = '<div class="details-empty">Select a project above to see its full details.</div>';
+        return;
+      }
+      const r = allRows.find(row => row["Project Name"] === name.trim());
+      if (!r) {
+        panel.innerHTML = '<div class="details-empty">Project "' + name +
+          '" not found. Check spelling or pick from the dropdown.</div>';
+        return;
+      }
+
+      const fidCost   = parseFloat(r["FID Cost (when Approved)"]);
+      const finalCost = parseFloat(r["Final Cost"]);
+      const hasCost   = !isNaN(fidCost) && fidCost > 0 && !isNaN(finalCost) && finalCost > 0;
+
+      let overrunPct = parseFloat(r["Cost Variance (Actual vs FID) %"]);
+      if (isNaN(overrunPct) && hasCost) overrunPct = (finalCost - fidCost) / fidCost * 100;
+      const overrunStr   = !isNaN(overrunPct) ? (overrunPct >= 0 ? "+" : "") + overrunPct.toFixed(1) + "%" : "—";
+      const overrunColor = !isNaN(overrunPct) ? (overrunPct > 20 ? "var(--bad)" : overrunPct < 0 ? "var(--good)" : "var(--warn)") : "";
+      const overrunDollar = hasCost ? finalCost - fidCost : null;
+
+      let slipYrs = parseFloat(r["ISD Variance (Actual vs FID) in Years"]);
+      if (isNaN(slipYrs)) {
+        const fidY = parseInt(r["FID ISD Year"]); const actY = parseInt(r["Actual ISD Year"]);
+        if (!isNaN(fidY) && fidY > 0 && !isNaN(actY) && actY > 0) slipYrs = actY - fidY;
+      }
+      const slipStr   = !isNaN(slipYrs) ? (slipYrs > 0 ? "+" : "") + slipYrs.toFixed(1) + " yrs" : "—";
+      const slipColor = !isNaN(slipYrs) ? (slipYrs > 0 ? "var(--bad)" : slipYrs < 0 ? "var(--good)" : "") : "";
+
+      const company   = (r["Company "] || "").trim();
+      const source    = (r["Source"] || "").trim();
+      const note      = (r["Note"] || "").trim();
+      const scopeNote = (r["Scope Note"] || "").trim();
+
+      // Update URL for sharing without reload
+      const shareUrl = window.location.origin + window.location.pathname +
+        "?project=" + encodeURIComponent(r["Project Name"]) + "&tab=details";
+      history.replaceState(null, "", "?project=" + encodeURIComponent(r["Project Name"]) + "&tab=details");
+
+      function field(label, val, colorStr) {
+        if (val === null || val === undefined || val === "") return "";
+        const style = colorStr ? ' style="color:' + colorStr + ';font-weight:700"' : "";
+        return '<div class="details-field">' +
+          '<span class="details-field-label">' + label + '</span>' +
+          '<span class="details-field-value"' + style + '>' + val + '</span>' +
+          '</div>';
+      }
+
+      const fidCostFmt   = !isNaN(fidCost)   ? "$" + fidCost.toFixed(2)   + "B" : "—";
+      const finalCostFmt = !isNaN(finalCost) ? "$" + finalCost.toFixed(2) + "B" : "—";
+      const overrunDollarFmt = overrunDollar != null
+        ? (overrunDollar >= 0 ? "+" : "") + overrunDollar.toFixed(2) + "B"
+        : null;
+      const fidIsdDisplay = [r["FID ISD Year"], r["FID ISD (Date)"] && r["FID ISD (Date)"] !== r["FID ISD Year"]
+        ? "(" + r["FID ISD (Date)"] + ")" : ""].filter(Boolean).join("  ");
+      const actIsdDisplay = [r["Actual ISD Year"], r["Actual ISD"] && r["Actual ISD"] !== r["Actual ISD Year"]
+        ? "(" + r["Actual ISD"] + ")" : ""].filter(Boolean).join("  ");
+
+      panel.innerHTML =
+        '<div class="details-card">' +
+          '<div class="details-card-header">' +
+            '<div class="details-project-name">' + r["Project Name"] + '</div>' +
+            '<button class="details-copy-btn" id="details-copy-btn">🔗 Copy shareable link</button>' +
+          '</div>' +
+
+          // ── Summary tiles ──
+          '<div class="details-summary">' +
+            '<div class="details-summary-tile">' +
+              '<div class="tile-label">FID Cost → Final Cost</div>' +
+              '<div class="tile-val">' + fidCostFmt + ' → ' + finalCostFmt + '</div>' +
+              '<div class="tile-sub" style="color:' + (overrunColor || "var(--muted)") + ';font-weight:600">' +
+                overrunStr + ' overrun' + (overrunDollarFmt ? '  (' + overrunDollarFmt + ')' : '') +
+              '</div>' +
+            '</div>' +
+            '<div class="details-summary-tile">' +
+              '<div class="tile-label">Planned ISD → Actual ISD</div>' +
+              '<div class="tile-val">' + (r["FID ISD Year"] || "—") + ' → ' + (r["Actual ISD Year"] || "—") + '</div>' +
+              '<div class="tile-sub" style="color:' + (slipColor || "var(--muted)") + ';font-weight:600">' +
+                slipStr + ' schedule slip' +
+              '</div>' +
+            '</div>' +
+            '<div class="details-summary-tile">' +
+              '<div class="tile-label">Type · Country</div>' +
+              '<div class="tile-val" style="font-size:17px">' + (r["Type"] || "—") + '</div>' +
+              '<div class="tile-sub">' + [r["Sub Type"], r["Country"]].filter(Boolean).join(' · ') + '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // ── Detail sections ──
+          '<div class="details-sections">' +
+
+            '<div class="details-section">' +
+              '<h3>Classification</h3>' +
+              field("Type", r["Type"]) +
+              field("Sub Type", r["Sub Type"]) +
+              field("Country", r["Country"]) +
+              field("Owner / Company", company) +
+              field("Project No.", r["Prj_#_4_Display"]) +
+            '</div>' +
+
+            '<div class="details-section">' +
+              '<h3>Schedule</h3>' +
+              field("FID Year", r["FID Year"]) +
+              field("FID Date", r["FID Date"]) +
+              field("Planned In-Service (FID ISD)", fidIsdDisplay || "—") +
+              field("Actual In-Service", actIsdDisplay || "—") +
+              field("Schedule Slip", slipStr, slipColor || null) +
+              field("Construction Start Year", r["Construction Start Year"]) +
+            '</div>' +
+
+            '<div class="details-section">' +
+              '<h3>Cost</h3>' +
+              field("FID Cost (Approved)", fidCostFmt) +
+              field("Final Cost", finalCostFmt) +
+              field("Cost Overrun %", overrunStr, overrunColor || null) +
+              (overrunDollarFmt ? field("Cost Overrun ($B)", overrunDollarFmt, overrunColor || null) : "") +
+              field("Cost Estimate at Start", r["Cost Estimate when Started"] ? "$" + r["Cost Estimate when Started"] + "B" : "") +
+            '</div>' +
+
+            '<div class="details-section">' +
+              '<h3>Size / Capacity</h3>' +
+              field("Capacity (MW)", r["Capacity (MW)"]) +
+              field("Length (km)", r["Length(km)"]) +
+              field("Size", r["Size"]) +
+              field("Brownfield / Greenfield", r["Brown Field / Green Field"]) +
+            '</div>' +
+
+            '<div class="details-section details-full-width">' +
+              '<h3>Source &amp; Validation</h3>' +
+              (source ? '<div class="details-field"><span class="details-field-label">Source URL</span>' +
+                '<span class="details-field-value"><a class="details-source-link" href="' + source +
+                '" target="_blank" rel="noopener">' + source + ' ↗</a></span></div>' : "") +
+              (r["Project Website"] ? '<div class="details-field"><span class="details-field-label">Project Website</span>' +
+                '<span class="details-field-value"><a class="details-source-link" href="' + r["Project Website"] +
+                '" target="_blank" rel="noopener">' + r["Project Website"] + ' ↗</a></span></div>' : "") +
+              (scopeNote ? '<div class="details-field"><span class="details-field-label">Scope</span>' +
+                '<div class="details-scope">' + scopeNote + '</div></div>' : "") +
+              (note ? '<div class="details-field"><span class="details-field-label">Notes &amp; Confidence</span>' +
+                '<div class="details-note">' + note + '</div></div>' : "") +
+              (!source && !scopeNote && !note ? field("Source", "—") : "") +
+            '</div>' +
+
+          '</div>' + // .details-sections
+        '</div>';  // .details-card
+
+      document.getElementById("details-copy-btn").addEventListener("click", () => {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          const btn = document.getElementById("details-copy-btn");
+          if (!btn) return;
+          btn.textContent = "✓ Copied!";
+          setTimeout(() => { if (document.getElementById("details-copy-btn")) btn.textContent = "🔗 Copy shareable link"; }, 2500);
+        });
+      });
     }
   </script>
 </body>
