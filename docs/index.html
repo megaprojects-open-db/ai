@@ -225,7 +225,7 @@
     <header>
       <div class="header-titles">
         <h1>Mega Projects Open Database</h1>
-        <p class="tagline">Cost and schedule performance of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia.</p>
+        <p class="tagline">High level cost and schedule information of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia. Data is sourced from publicly available information (with the help from AI) and has not been reviewed or verified by the companies involved or any independent peers — treat this as a reference resource, not a basis for formal decisions or evaluations.</p>
         <p class="last-updated" id="last-updated">Loading data...</p>
       </div>
       <div class="header-meta">
@@ -1291,13 +1291,4 @@
 
       document.getElementById("details-copy-btn").addEventListener("click", () => {
         navigator.clipboard.writeText(shareUrl).then(() => {
-          const btn = document.getElementById("details-copy-btn");
-          if (!btn) return;
-          btn.textContent = "✓ Copied!";
-          setTimeout(() => { if (document.getElementById("details-copy-btn")) btn.textContent = "🔗 Copy shareable link"; }, 2500);
-        });
-      });
-    }
-  </script>
-</body>
-</html>
+          const btn = document.getElementById("details-copy-btn
