@@ -1291,4 +1291,13 @@
 
       document.getElementById("details-copy-btn").addEventListener("click", () => {
         navigator.clipboard.writeText(shareUrl).then(() => {
-          const btn = document.getElementById("details-copy-btn
+          const btn = document.getElementById("details-copy-btn");
+          if (!btn) return;
+          btn.textContent = "✓ Copied!";
+          setTimeout(() => { if (document.getElementById("details-copy-btn")) btn.textContent = "🔗 Copy shareable link"; }, 2500);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
