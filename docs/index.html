@@ -93,7 +93,7 @@
   .header-meta .visitor-since { font-size: 11px; color: var(--muted); margin-top: 4px; }
   @media (max-width: 640px) { .header-meta { text-align: left; } }
   h1 { margin: 0 0 6px 0; font-size: 30px; font-weight: 600; letter-spacing: -0.5px; }
-  .tagline { color: var(--text-muted); font-size: 15px; margin: 0; max-width: 720px; }
+  .tagline { color: var(--text-muted); font-size: 15px; margin: 0; }
   .last-updated { font-size: 12px; color: var(--muted); margin-top: 10px; }
 
   /* Filters */
@@ -225,7 +225,7 @@
     <header>
       <div class="header-titles">
         <h1>Mega Projects Open Database</h1>
-        <p class="tagline">High level cost and schedule information of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia. Data is sourced from publicly available information (with the help from AI) and has not been reviewed or verified by the companies involved or any independent peers — treat this as a reference resource, not a basis for formal decisions or evaluations.</p>
+        <p class="tagline">High level cost and schedule information of $1B+ infrastructure, energy, and industrial projects across North America, the UK, Europe, and Australasia. Data is sourced from publicly available information (with the help from AI) and has not been reviewed or verified by the companies involved or any independent peers — <strong>treat this as a reference resource, not a basis for formal decisions or evaluations.</strong></p>
         <p class="last-updated" id="last-updated">Loading data...</p>
       </div>
       <div class="header-meta">
@@ -445,7 +445,7 @@
 
         const today = new Date().toISOString().slice(0, 10);
         document.getElementById("last-updated").textContent =
-          "Last refreshed " + today + " – " + allRows.length + " projects – data: master.csv";
+          "Last refreshed " + today + " – " + allRows.length + " projects";
 
         populateFilters(allRows);
         applyFilters();
