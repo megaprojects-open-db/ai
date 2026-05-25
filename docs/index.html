@@ -218,6 +218,79 @@
   .chart-detail .no-source { color: var(--muted); font-size: 12px; font-style: italic; }
   .chart-detail .close { float: right; cursor: pointer; color: var(--muted); background: transparent; border: none; font-size: 18px; line-height: 1; padding: 0 4px; }
   .chart-detail .close:hover { color: var(--bad); }
+
+  /* ── Benchmarking tab ──────────────────────────────────────────────────── */
+  .bench-controls {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .bench-controls label { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .bench-controls .details-search-input { flex: 1 1 260px; }
+  .bench-type-badge {
+    display: inline-block; padding: 3px 12px; border-radius: 999px;
+    background: var(--accent-light); color: var(--accent); font-size: 12px; font-weight: 600;
+    white-space: nowrap; transition: opacity 0.2s;
+  }
+  .bench-summary {
+    display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .bench-summary-item {
+    flex: 1 1 160px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px;
+  }
+  .bench-summary-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-muted); font-weight: 700; margin-bottom: 5px;
+  }
+  .bench-summary-value { font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .bench-summary-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .bench-charts {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px;
+  }
+  .bench-charts .chart-card canvas { height: 260px !important; }
+  .bench-chart-note {
+    font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; line-height: 1.5;
+  }
+  .bench-empty { color: var(--muted); font-size: 13px; font-style: italic; padding: 12px 0; }
+  .bench-no-data-notice {
+    background: #fffbe6; border: 1px solid #fde68a; border-radius: 6px;
+    padding: 8px 12px; font-size: 12px; color: #78350f; margin-bottom: 10px; line-height: 1.5;
+  }
+  .bench-chart-legend {
+    display: flex; gap: 14px; align-items: center; justify-content: flex-end;
+    font-size: 12px; color: var(--text-muted); margin-bottom: 6px; flex-wrap: wrap;
+  }
+  .bench-legend-item { display: flex; align-items: center; gap: 5px; }
+  .bench-legend-dot {
+    width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+    background: rgba(31,78,121,0.25); border: 1.5px solid rgba(31,78,121,0.5);
+  }
+  .bench-legend-tri {
+    display: inline-block; width: 0; height: 0;
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+    border-bottom: 10px solid #15803d;
+  }
+  .bench-legend-item.selected { color: #15803d; font-weight: 600; }
+  .bench-stat-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; padding: 6px 10px; margin-bottom: 8px;
+    background: var(--accent-light); border: 1px solid #cfdcec; border-radius: 5px;
+    flex-wrap: wrap; gap: 4px 16px;
+  }
+  .bench-stat-row span { white-space: nowrap; color: var(--text-muted); }
+  .bench-stat-row span strong { color: var(--accent); }
+  .bench-stat-median { font-weight: 700 !important; color: var(--accent) !important; }
+  .bench-group-toggle { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .bench-group-toggle label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .bench-toggle-btns { display: flex; border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; }
+  .bench-toggle-btn {
+    padding: 5px 14px; font-size: 12px; font-weight: 500; border: none; border-right: 1px solid var(--border-strong);
+    background: #fff; color: var(--text-muted); cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .bench-toggle-btn:last-child { border-right: none; }
+  .bench-toggle-btn.active { background: var(--accent); color: #fff; }
+  .bench-toggle-btn:hover:not(.active) { background: var(--accent-light); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -276,6 +349,7 @@
     <nav class="tabs" id="tabs">
       <button data-tab="overview" class="active">Overview</button>
       <button data-tab="schedule">Schedule</button>
+      <button data-tab="benchmarking">Benchmarking</button>
       <button data-tab="details">Project Details</button>
       <button data-tab="projects">Project List</button>
       <button data-tab="about">About &amp; methodology</button>
@@ -287,6 +361,28 @@
 
     <div id="tab-projects" class="tab-panel">
       <div class="table-card"><h2>All projects</h2><div id="grid"></div></div>
+    </div>
+
+    <div id="tab-benchmarking" class="tab-panel">
+      <div class="bench-controls">
+        <label for="bench-search">Select project</label>
+        <input type="text" id="bench-search" class="details-search-input"
+               list="bench-project-list"
+               placeholder="Type or select a project name…"
+               autocomplete="off">
+        <datalist id="bench-project-list"></datalist>
+        <span id="bench-type-badge" class="bench-type-badge" style="display:none"></span>
+        <div class="bench-group-toggle">
+          <label>Compare by</label>
+          <div class="bench-toggle-btns">
+            <button class="bench-toggle-btn active" data-group="Type">Type</button>
+            <button class="bench-toggle-btn" data-group="SubType">Sub Type</button>
+          </div>
+        </div>
+      </div>
+      <div id="bench-content">
+        <div class="details-empty">Select a project above to see how it compares to its peers.</div>
+      </div>
     </div>
 
     <div id="tab-details" class="tab-panel">
@@ -450,6 +546,7 @@
         populateFilters(allRows);
         applyFilters();
         initDetails();
+        initBenchmarking();
         // Handle URL params: ?project=Name&tab=details
         const urlParams = new URLSearchParams(window.location.search);
         const urlProject = urlParams.get("project");
@@ -958,51 +1055,10 @@
               }
             }
           },
-          onClick: (evt, els, chart) => {
+          onClick: (evt, els) => {
             const panel = document.getElementById("chart-year-detail");
-            if (els.length) {
-              const d = els[0].element.$context.raw._meta;
-              const subType = d.subType ? " · " + d.subType : "";
-              const fidCostStr = d.fidCost != null ? "$" + d.fidCost.toFixed(2) + "B" : "—";
-              const finCostStr = d.finalCost != null ? "$" + d.finalCost.toFixed(2) + "B" : "—";
-              let overrunStr = "—";
-              if (d.fidCost != null && d.finalCost != null && d.fidCost > 0) {
-                const pct = (d.finalCost - d.fidCost) / d.fidCost * 100;
-                overrunStr = (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
-              }
-              let slipStr = "—";
-              if (d.fidIsdYear && d.actualIsdYear) {
-                const slipY = parseInt(d.actualIsdYear) - parseInt(d.fidIsdYear);
-                if (!isNaN(slipY)) slipStr = (slipY > 0 ? "+" : "") + slipY + " yr" + (Math.abs(slipY) === 1 ? "" : "s");
-              }
-              const company = d.company ? '<div class="meta"><strong style="color: var(--text-muted); font-weight: 500;">Owner:</strong> ' + d.company + '</div>' : "";
-              let sourceBlock;
-              if (d.source && /^https?:\/\//.test(d.source)) {
-                sourceBlock = '<a class="source-link" href="' + d.source + '" target="_blank" rel="noopener">Verify at source ↗</a>';
-              } else if (d.source) {
-                sourceBlock = '<span class="no-source">Source: ' + d.source + '</span>';
-              } else {
-                sourceBlock = '<span class="no-source">No source URL available for this row</span>';
-              }
-              panel.innerHTML = '<button class="close" aria-label="Close">×</button>' +
-                '<div class="name">' + d.name + '</div>' +
-                '<div class="detail-grid">' +
-                  '<div><strong>Type:</strong> ' + d.type + subType + '</div>' +
-                  '<div><strong>Country:</strong> ' + (d.country || "—") + '</div>' +
-                  '<div><strong>FID cost:</strong> ' + fidCostStr + '</div>' +
-                  '<div><strong>Final cost:</strong> ' + finCostStr + '</div>' +
-                  '<div><strong>Planned ISD:</strong> ' + (d.fidIsdYear || "—") + '</div>' +
-                  '<div><strong>Actual ISD:</strong> ' + (d.actualIsdYear || "—") + '</div>' +
-                  '<div><strong>Cost overrun:</strong> ' + overrunStr + '</div>' +
-                  '<div><strong>Schedule slip:</strong> ' + slipStr + '</div>' +
-                '</div>' +
-                company +
-                '<div class="source-row">' + sourceBlock + '</div>';
-              panel.classList.add("active");
-              panel.querySelector(".close").addEventListener("click", () => panel.classList.remove("active"));
-            } else {
-              panel.classList.remove("active");
-            }
+            if (els.length) showChartDetailPanel(panel, els[0].element.$context.raw._meta);
+            else panel.classList.remove("active");
           },
           scales: {
             x: { type: "linear", min: Math.floor(minYear) - 1, max: Math.ceil(maxYear) + 1,
@@ -1296,6 +1352,470 @@
           btn.textContent = "✓ Copied!";
           setTimeout(() => { if (document.getElementById("details-copy-btn")) btn.textContent = "🔗 Copy shareable link"; }, 2500);
         });
+      });
+    }
+
+    // ── Benchmarking tab ──────────────────────────────────────────────────────
+
+    // Custom Chart.js plugin: draws box-and-whisker overlay on a scatter chart.
+    // Box shape is drawn BEFORE datasets so dots/triangle always appear on top.
+    // Labels are drawn AFTER datasets so they render above everything.
+    const boxPlotPlugin = {
+      id: "boxPlotBenchmark",
+
+      // Helper: compute shared geometry from chart state
+      _geo(chart) {
+        const opts = chart.options.plugins && chart.options.plugins.boxPlotBenchmark;
+        if (!opts || !opts.box) return null;
+        const box = opts.box;
+        if (box.whiskerLow == null) return null;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+        const yTop  = yAxis.getPixelForValue(yAxis.max);
+        const yBot  = yAxis.getPixelForValue(yAxis.min);
+        const yMid  = (yTop + yBot) / 2;
+        const boxH  = Math.min(52, Math.abs(yBot - yTop) * 0.30);
+        return {
+          box, unit: opts.unit || "",
+          yMid, boxH,
+          xLow:  xAxis.getPixelForValue(box.whiskerLow),
+          xQ1:   xAxis.getPixelForValue(box.q1),
+          xMed:  xAxis.getPixelForValue(box.q2),
+          xQ3:   xAxis.getPixelForValue(box.q3),
+          xHigh: xAxis.getPixelForValue(box.whiskerHigh),
+        };
+      },
+
+      // Draw box + whiskers BEFORE datasets (so dots sit on top)
+      beforeDatasetsDraw(chart) {
+        const g = this._geo(chart);
+        if (!g) return;
+        const { ctx, } = chart;
+        const { yMid, boxH, xLow, xQ1, xMed, xQ3, xHigh } = g;
+        ctx.save();
+
+        // IQR box fill
+        ctx.fillStyle = "rgba(31,78,121,0.10)";
+        ctx.fillRect(xQ1, yMid - boxH / 2, xQ3 - xQ1, boxH);
+
+        // IQR box border
+        ctx.strokeStyle = "rgba(31,78,121,0.65)";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(xQ1, yMid - boxH / 2, xQ3 - xQ1, boxH);
+
+        // Median line
+        ctx.beginPath();
+        ctx.strokeStyle = "#1f4e79";
+        ctx.lineWidth = 2.5;
+        ctx.moveTo(xMed, yMid - boxH / 2);
+        ctx.lineTo(xMed, yMid + boxH / 2);
+        ctx.stroke();
+
+        // Whisker lines (dashed)
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(31,78,121,0.50)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.moveTo(xLow, yMid); ctx.lineTo(xQ1,  yMid);
+        ctx.moveTo(xQ3,  yMid); ctx.lineTo(xHigh, yMid);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Whisker caps
+        const capH = boxH * 0.32;
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(31,78,121,0.60)";
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(xLow,  yMid - capH); ctx.lineTo(xLow,  yMid + capH);
+        ctx.moveTo(xHigh, yMid - capH); ctx.lineTo(xHigh, yMid + capH);
+        ctx.stroke();
+
+        ctx.restore();
+      },
+
+      // No canvas labels — stats are shown as HTML below the legend row
+      afterDatasetsDraw() {}
+    };
+
+    let benchGroupBy = "Type";  // "Type" or "SubType" — default: Type
+
+    function initBenchmarking() {
+      const dl = document.getElementById("bench-project-list");
+      if (!dl) return;
+      dl.innerHTML = "";
+      allRows.slice()
+        .sort((a, b) => (a["Project Name"] || "").localeCompare(b["Project Name"] || ""))
+        .forEach(r => {
+          const opt = document.createElement("option");
+          opt.value = r["Project Name"] || "";
+          dl.appendChild(opt);
+        });
+
+      // Toggle buttons
+      document.querySelectorAll(".bench-toggle-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (btn.dataset.group === benchGroupBy) return; // no-op if already active
+          benchGroupBy = btn.dataset.group;
+          document.querySelectorAll(".bench-toggle-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const val = document.getElementById("bench-search").value.trim();
+          if (allRows.find(r => r["Project Name"] === val)) renderBenchmarking(val);
+        });
+      });
+
+      const inp = document.getElementById("bench-search");
+      if (!inp) return;
+      function onBenchInput() {
+        const val = inp.value.trim();
+        const match = allRows.find(r => r["Project Name"] === val);
+        if (match) renderBenchmarking(val);
+        else if (!val) {
+          document.getElementById("bench-content").innerHTML =
+            '<div class="details-empty">Select a project above to see how it compares to its peers.</div>';
+          const badge = document.getElementById("bench-type-badge");
+          if (badge) { badge.textContent = ""; badge.style.display = "none"; }
+        }
+      }
+      inp.addEventListener("change", onBenchInput);
+      inp.addEventListener("input",  onBenchInput);
+    }
+
+    function benchQuartiles(arr) {
+      if (!arr.length) return null;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const n = sorted.length;
+      // Linear interpolation for percentile
+      function pct(p) {
+        const idx = p * (n - 1);
+        const lo  = Math.floor(idx);
+        const hi  = Math.ceil(idx);
+        return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+      }
+      const q1  = pct(0.25);
+      const q2  = pct(0.50);
+      const q3  = pct(0.75);
+      const p10 = pct(0.10);
+      const p90 = pct(0.90);
+      const mean = sorted.reduce((s, v) => s + v, 0) / n;
+      return { sorted, n, q1, q2, q3, whiskerLow: p10, whiskerHigh: p90, mean };
+    }
+
+    function benchCostVar(r) {
+      // Always compute from raw costs — the precomputed column stores decimal ratios
+      // (e.g. 0.92 for a 92% overrun) which would conflict with our %-scale fallback.
+      const fid = parseFloat(r["FID Cost (when Approved)"]);
+      const fin = parseFloat(r["Final Cost"]);
+      if (!isNaN(fid) && fid > 0 && !isNaN(fin) && fin > 0) return (fin - fid) / fid * 100;
+      return null;
+    }
+
+    function benchSchedVar(r) {
+      // Prefer the pre-computed column; fall back to year subtraction.
+      // Guard against Excel exporting 0 for rows where both ISD fields are blank.
+      const fidY = parseInt(r["FID ISD Year"]);
+      const actY = parseInt(r["Actual ISD Year"]);
+      if (!isNaN(fidY) && fidY > 1900 && !isNaN(actY) && actY > 1900) return actY - fidY;
+      const sv = parseFloat(r["ISD Variance (Actual vs FID) in Years"]);
+      if (!isNaN(sv) && sv !== 0) return sv;   // treat 0 from blank cells as unreliable
+      return null;
+    }
+
+    // ── Shared helper: populate and show a .chart-detail panel from a _meta object ──
+    function showChartDetailPanel(panel, d) {
+      if (!panel || !d) return;
+      const subType     = d.subType ? " · " + d.subType : "";
+      const fidCostStr  = d.fidCost   != null ? "$" + d.fidCost.toFixed(2)   + "B" : "—";
+      const finCostStr  = d.finalCost != null ? "$" + d.finalCost.toFixed(2) + "B" : "—";
+      let overrunStr = "—";
+      if (d.fidCost != null && d.finalCost != null && d.fidCost > 0) {
+        const pct = (d.finalCost - d.fidCost) / d.fidCost * 100;
+        overrunStr = (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
+      }
+      let slipStr = "—";
+      if (d.fidIsdYear && d.actualIsdYear) {
+        const slipY = parseInt(d.actualIsdYear) - parseInt(d.fidIsdYear);
+        if (!isNaN(slipY)) slipStr = (slipY > 0 ? "+" : "") + slipY + " yr" + (Math.abs(slipY) === 1 ? "" : "s");
+      }
+      const company = d.company
+        ? '<div class="meta"><strong style="color:var(--text-muted);font-weight:500">Owner:</strong> ' + d.company + '</div>'
+        : "";
+      const sourceBlock = (d.source && /^https?:\/\//.test(d.source))
+        ? '<a class="source-link" href="' + d.source + '" target="_blank" rel="noopener">Verify at source ↗</a>'
+        : d.source
+          ? '<span class="no-source">Source: ' + d.source + '</span>'
+          : '<span class="no-source">No source URL available for this row</span>';
+      panel.innerHTML =
+        '<button class="close" aria-label="Close">×</button>' +
+        '<div class="name">' + d.name + '</div>' +
+        '<div class="detail-grid">' +
+          '<div><strong>Type:</strong> ' + (d.type || "—") + subType + '</div>' +
+          '<div><strong>Country:</strong> ' + (d.country || "—") + '</div>' +
+          '<div><strong>FID cost:</strong> ' + fidCostStr + '</div>' +
+          '<div><strong>Final cost:</strong> ' + finCostStr + '</div>' +
+          '<div><strong>Planned ISD:</strong> ' + (d.fidIsdYear || "—") + '</div>' +
+          '<div><strong>Actual ISD:</strong> ' + (d.actualIsdYear || "—") + '</div>' +
+          '<div><strong>Cost overrun:</strong> ' + overrunStr + '</div>' +
+          '<div><strong>Schedule slip:</strong> ' + slipStr + '</div>' +
+        '</div>' +
+        company +
+        '<div class="source-row">' + sourceBlock + '</div>';
+      panel.classList.add("active");
+      panel.querySelector(".close").addEventListener("click", () => panel.classList.remove("active"));
+    }
+
+    function fmt(v, unit) { return (v >= 0 ? "+" : "") + v.toFixed(1) + unit; }
+
+    function benchStatRowHtml(stats, unit) {
+      if (!stats || stats.n < 2) {
+        return '<div class="bench-stat-row" style="justify-content:center;color:var(--muted)">Not enough peer data for statistics</div>';
+      }
+      return '<div class="bench-stat-row">' +
+        '<span><strong>P10:</strong> ' + fmt(stats.whiskerLow,  unit) + '</span>' +
+        '<span><strong>Q1:</strong> '  + fmt(stats.q1,          unit) + '</span>' +
+        '<span class="bench-stat-median"><strong>Median: ' + fmt(stats.q2, unit) + '</strong></span>' +
+        '<span><strong>Q3:</strong> '  + fmt(stats.q3,          unit) + '</span>' +
+        '<span><strong>P90:</strong> ' + fmt(stats.whiskerHigh, unit) + '</span>' +
+      '</div>';
+    }
+
+    function renderBenchmarking(name) {
+      const content = document.getElementById("bench-content");
+      if (!name) { content.innerHTML = '<div class="details-empty">Select a project above to see how it compares to its peers.</div>'; return; }
+
+      const project = allRows.find(r => r["Project Name"] === name);
+      if (!project) { content.innerHTML = '<div class="details-empty">Project not found.</div>'; return; }
+
+      const groupField  = benchGroupBy === "SubType" ? "Sub Type" : "Type";
+      const groupLabel  = benchGroupBy === "SubType" ? "Sub Type" : "Type";
+      const projectType = (project[groupField] || "").trim();  // value in the chosen field
+
+      // Show badge reflecting the current grouping
+      const badge = document.getElementById("bench-type-badge");
+      if (badge) {
+        badge.textContent = (groupLabel + ": " + projectType) || "Unknown";
+        badge.style.display = projectType ? "inline-block" : "none";
+      }
+
+      // Peers = same value in the chosen group field, not the selected project
+      const peers = allRows.filter(r => (r[groupField] || "").trim() === projectType && r["Project Name"] !== name);
+
+      const projCostVar  = benchCostVar(project);
+      const projSchedVar = benchSchedVar(project);
+
+      const peerCostData  = peers.map(r => ({ name: r["Project Name"], value: benchCostVar(r),  row: r })).filter(p => p.value !== null);
+      const peerSchedData = peers.map(r => ({ name: r["Project Name"], value: benchSchedVar(r), row: r })).filter(p => p.value !== null);
+
+      const costStats  = benchQuartiles(peerCostData.map(p => p.value));
+      const schedStats = benchQuartiles(peerSchedData.map(p => p.value));
+
+      const costVarStr  = projCostVar  != null ? (projCostVar  >= 0 ? "+" : "") + projCostVar.toFixed(1)  + "%" : "—";
+      const schedVarStr = projSchedVar != null ? (projSchedVar >= 0 ? "+" : "") + projSchedVar.toFixed(1) + " yrs" : "—";
+      const costColor   = projCostVar  != null ? (projCostVar  > 20 ? "var(--bad)" : projCostVar  < 0 ? "var(--good)" : "var(--warn)") : "var(--muted)";
+      const schedColor  = projSchedVar != null ? (projSchedVar > 0  ? "var(--bad)" : projSchedVar < 0 ? "var(--good)" : "var(--text)") : "var(--muted)";
+
+      // Percentile rank: % of peers with HIGHER variance = this project is "better than" that share
+      function pctileLabel(projVal, peerArr) {
+        if (projVal === null) return "No data recorded for this project";
+        if (!peerArr.length)  return "No peer projects have data for comparison";
+        const betterThan = peerArr.filter(p => p.value > projVal).length;
+        const pct = Math.round((betterThan / peerArr.length) * 100);
+        return "Better than " + pct + "% of " + projectType + " peers (" + peerArr.length + " with data)";
+      }
+
+      content.innerHTML =
+        '<div class="bench-summary">' +
+          '<div class="bench-summary-item">' +
+            '<div class="bench-summary-label">Project</div>' +
+            '<div class="bench-summary-value" style="font-size:14px;line-height:1.35">' + name + '</div>' +
+          '</div>' +
+          '<div class="bench-summary-item">' +
+            '<div class="bench-summary-label">Peer group (' + groupLabel + ')</div>' +
+            '<div class="bench-summary-value" style="font-size:16px">' + (projectType || "—") + '</div>' +
+            '<div class="bench-summary-sub">' + peers.length + ' projects in same ' + groupLabel.toLowerCase() + '</div>' +
+          '</div>' +
+          '<div class="bench-summary-item">' +
+            '<div class="bench-summary-label">Cost variance</div>' +
+            '<div class="bench-summary-value" style="color:' + costColor + '">' + costVarStr + '</div>' +
+            '<div class="bench-summary-sub">' + pctileLabel(projCostVar, peerCostData) + '</div>' +
+          '</div>' +
+          '<div class="bench-summary-item">' +
+            '<div class="bench-summary-label">Schedule variance</div>' +
+            '<div class="bench-summary-value" style="color:' + schedColor + '">' + schedVarStr + '</div>' +
+            '<div class="bench-summary-sub">' + pctileLabel(projSchedVar, peerSchedData) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="bench-charts">' +
+          '<div class="chart-card">' +
+            '<h2>Cost Variance vs ' + projectType + ' ' + groupLabel + ' Peers</h2>' +
+            // HTML legend row
+            '<div class="bench-chart-legend">' +
+              '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
+              (projCostVar !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + costVarStr + '</span>' : '') +
+            '</div>' +
+            // Stat row
+            benchStatRowHtml(costStats, "%") +
+            // Optional no-data notice
+            (projCostVar === null ? '<div class="bench-no-data-notice">⚠ No Final Cost data recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            '<canvas id="bench-chart-cost"></canvas>' +
+            '<div class="chart-detail" id="bench-detail-cost"></div>' +
+            '<div class="bench-chart-note">Cost variance = (Final Cost − FID Cost) ÷ FID Cost × 100. ' +
+              'Box = Q1–Q3, centre line = median, dashes = P10–P90. Click a dot for details.</div>' +
+          '</div>' +
+          '<div class="chart-card">' +
+            '<h2>Schedule Variance vs ' + projectType + ' ' + groupLabel + ' Peers</h2>' +
+            '<div class="bench-chart-legend">' +
+              '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
+              (projSchedVar !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + schedVarStr + '</span>' : '') +
+            '</div>' +
+            benchStatRowHtml(schedStats, " yrs") +
+            (projSchedVar === null ? '<div class="bench-no-data-notice">⚠ No planned/actual in-service date recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            '<canvas id="bench-chart-sched"></canvas>' +
+            '<div class="chart-detail" id="bench-detail-sched"></div>' +
+            '<div class="bench-chart-note">Schedule variance = Actual ISD Year − Planned ISD Year (years). ' +
+              'Box = Q1–Q3, centre line = median, dashes = P10–P90. Click a dot for details.</div>' +
+          '</div>' +
+        '</div>';
+
+      // Give the DOM a tick to render the canvases, then draw
+      setTimeout(() => {
+        renderBenchChart("bench-chart-cost",  costStats,  projCostVar,  peerCostData,  name, "Cost Variance (%)",       "%",    "bench-detail-cost");
+        renderBenchChart("bench-chart-sched", schedStats, projSchedVar, peerSchedData, name, "Schedule Variance (yrs)", " yrs", "bench-detail-sched");
+      }, 10);
+    }
+
+    function renderBenchChart(canvasId, stats, projValue, peerData, projName, xLabel, unit, detailPanelId) {
+      const el = document.getElementById(canvasId);
+      if (!el) return;
+
+      // Stable pseudo-random jitter on Y axis so individual dots spread out
+      function strHash(s) {
+        let h = 5381;
+        for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+        return ((h % 1000) + 1000) % 1000;
+      }
+
+      // Build dots with full _meta so the shared detail panel can be populated on click
+      const peerDots = peerData.map(p => {
+        const r = p.row || {};
+        const fidCostRaw   = parseFloat(r["FID Cost (when Approved)"]);
+        const finalCostRaw = parseFloat(r["Final Cost"]);
+        return {
+          x: p.value,
+          y: (strHash(p.name) / 1000 - 0.5) * 1.4,
+          _meta: {
+            name:          p.name,
+            type:          (r["Type"]        || "").trim(),
+            subType:       (r["Sub Type"]    || "").trim(),
+            country:       (r["Country"]     || "").trim(),
+            company:       (r["Company "]    || "").trim(),
+            source:        (r["Source"]      || "").trim(),
+            fidCost:       (!isNaN(fidCostRaw)   && fidCostRaw   > 0) ? fidCostRaw   : null,
+            finalCost:     (!isNaN(finalCostRaw) && finalCostRaw > 0) ? finalCostRaw : null,
+            fidIsdYear:    (r["FID ISD Year"]    || "").toString().trim(),
+            actualIsdYear: (r["Actual ISD Year"] || "").toString().trim(),
+          }
+        };
+      });
+
+      const datasets = [];
+
+      if (peerDots.length > 0) {
+        datasets.push({
+          label: "Peer projects",
+          data: peerDots,
+          backgroundColor: "rgba(31,78,121,0.22)",
+          borderColor:     "rgba(31,78,121,0.45)",
+          borderWidth: 1,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        });
+      }
+
+      if (projValue !== null) {
+        datasets.push({
+          label: projName,
+          data: [{ x: projValue, y: 0, _name: projName }],
+          backgroundColor: "#15803d",
+          borderColor:     "#15803d",
+          borderWidth: 2,
+          pointRadius: 9,
+          pointHoverRadius: 11,
+          pointStyle: "triangle",
+        });
+      }
+
+      if (!datasets.length) {
+        el.style.display = "none";
+        const note = el.nextElementSibling;
+        if (note) note.insertAdjacentHTML("beforebegin", '<div class="bench-empty">Not enough data to display this chart.</div>');
+        return;
+      }
+
+      // Compute x-axis bounds with padding
+      const allVals = peerData.map(p => p.value);
+      if (projValue !== null) allVals.push(projValue);
+      const xMinRaw = Math.min(...allVals);
+      const xMaxRaw = Math.max(...allVals);
+      const xPad = Math.max((xMaxRaw - xMinRaw) * 0.18, 3);
+
+      destroyChart(canvasId);
+      chartInstances[canvasId] = new Chart(el, {
+        type: "scatter",
+        data: { datasets },
+        plugins: [boxPlotPlugin],
+        options: {
+          maintainAspectRatio: false,
+          animation: { duration: 250 },
+          plugins: {
+            boxPlotBenchmark: {
+              box: stats ? {
+                q1: stats.q1, q2: stats.q2, q3: stats.q3,
+                whiskerLow: stats.whiskerLow, whiskerHigh: stats.whiskerHigh
+              } : null,
+              unit
+            },
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: () => "",
+                label: ctx => {
+                  const d = ctx.raw;
+                  const name = (d._meta && d._meta.name) || d._name || "";
+                  return name + ": " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + unit;
+                }
+              }
+            }
+          },
+          onClick: (evt, els) => {
+            const panel = document.getElementById(detailPanelId);
+            if (!panel) return;
+            if (els.length) {
+              const d = els[0].element.$context.raw._meta;
+              if (d) showChartDetailPanel(panel, d);
+            } else {
+              panel.classList.remove("active");
+            }
+          },
+          scales: {
+            x: {
+              type: "linear",
+              min: xMinRaw - xPad,
+              max: xMaxRaw + xPad,
+              title: { display: true, text: xLabel, color: "#5b5b58", font: { size: 12 } },
+              grid: { color: "#eee" },
+              ticks: {
+                color: "#000", font: { size: 11 },
+                callback: v => (v >= 0 ? "+" : "") + v.toFixed(0) + unit
+              }
+            },
+            y: {
+              type: "linear",
+              min: -1,
+              max: 1,
+              display: false
+            }
+          }
+        }
       });
     }
   </script>
