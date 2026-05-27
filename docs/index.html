@@ -1520,6 +1520,23 @@
       return null;
     }
 
+    function benchActualCost(r) {
+      const fin = parseFloat(r["Final Cost"]);
+      if (!isNaN(fin) && fin > 0) return fin;
+      const fid = parseFloat(r["FID Cost (when Approved)"]);
+      if (!isNaN(fid) && fid > 0) return fid;
+      return null;
+    }
+
+    function benchActualDuration(r) {
+      const dur = parseFloat(r["Implementation Duration"]);
+      if (!isNaN(dur) && dur > 0 && dur < 60) return dur;
+      const actY = parseInt(r["Actual ISD Year"]);
+      const fidY = parseInt(r["FID Year"]);
+      if (!isNaN(actY) && actY > 1900 && !isNaN(fidY) && fidY > 1900 && actY >= fidY) return actY - fidY;
+      return null;
+    }
+
     // ── Shared helper: populate and show a .chart-detail panel from a _meta object ──
     function showChartDetailPanel(panel, d) {
       if (!panel || !d) return;
@@ -1578,6 +1595,21 @@
       '</div>';
     }
 
+    function benchStatRowAbsHtml(stats, unit, dec) {
+      dec = dec !== undefined ? dec : 1;
+      function fmtA(v) { return v.toFixed(dec) + unit; }
+      if (!stats || stats.n < 2) {
+        return '<div class="bench-stat-row" style="justify-content:center;color:var(--muted)">Not enough peer data for statistics</div>';
+      }
+      return '<div class="bench-stat-row">' +
+        '<span><strong>P10:</strong> ' + fmtA(stats.whiskerLow)  + '</span>' +
+        '<span><strong>Q1:</strong> '  + fmtA(stats.q1)          + '</span>' +
+        '<span class="bench-stat-median"><strong>Median: ' + fmtA(stats.q2) + '</strong></span>' +
+        '<span><strong>Q3:</strong> '  + fmtA(stats.q3)          + '</span>' +
+        '<span><strong>P90:</strong> ' + fmtA(stats.whiskerHigh) + '</span>' +
+      '</div>';
+    }
+
     function renderBenchmarking(name) {
       const content = document.getElementById("bench-content");
       if (!name) { content.innerHTML = '<div class="details-empty">Select a project above to see how it compares to its peers.</div>'; return; }
@@ -1599,17 +1631,25 @@
       // Peers = same value in the chosen group field, not the selected project
       const peers = allRows.filter(r => (r[groupField] || "").trim() === projectType && r["Project Name"] !== name);
 
-      const projCostVar  = benchCostVar(project);
-      const projSchedVar = benchSchedVar(project);
+      const projCostVar    = benchCostVar(project);
+      const projSchedVar   = benchSchedVar(project);
+      const projActualCost = benchActualCost(project);
+      const projActualDur  = benchActualDuration(project);
 
-      const peerCostData  = peers.map(r => ({ name: r["Project Name"], value: benchCostVar(r),  row: r })).filter(p => p.value !== null);
-      const peerSchedData = peers.map(r => ({ name: r["Project Name"], value: benchSchedVar(r), row: r })).filter(p => p.value !== null);
+      const peerCostData       = peers.map(r => ({ name: r["Project Name"], value: benchCostVar(r),         row: r })).filter(p => p.value !== null);
+      const peerSchedData      = peers.map(r => ({ name: r["Project Name"], value: benchSchedVar(r),        row: r })).filter(p => p.value !== null);
+      const peerActualCostData = peers.map(r => ({ name: r["Project Name"], value: benchActualCost(r),      row: r })).filter(p => p.value !== null);
+      const peerActualDurData  = peers.map(r => ({ name: r["Project Name"], value: benchActualDuration(r),  row: r })).filter(p => p.value !== null);
 
-      const costStats  = benchQuartiles(peerCostData.map(p => p.value));
-      const schedStats = benchQuartiles(peerSchedData.map(p => p.value));
+      const costStats       = benchQuartiles(peerCostData.map(p => p.value));
+      const schedStats      = benchQuartiles(peerSchedData.map(p => p.value));
+      const actualCostStats = benchQuartiles(peerActualCostData.map(p => p.value));
+      const actualDurStats  = benchQuartiles(peerActualDurData.map(p => p.value));
 
       const costVarStr  = projCostVar  != null ? (projCostVar  >= 0 ? "+" : "") + projCostVar.toFixed(1)  + "%" : "—";
       const schedVarStr = projSchedVar != null ? (projSchedVar >= 0 ? "+" : "") + projSchedVar.toFixed(1) + " yrs" : "—";
+      const actualCostStr = projActualCost != null ? "$" + projActualCost.toFixed(2) + "B" : "—";
+      const actualDurStr  = projActualDur  != null ? projActualDur.toFixed(1) + " yrs" : "—";
       const costColor   = projCostVar  != null ? (projCostVar  > 20 ? "var(--bad)" : projCostVar  < 0 ? "var(--good)" : "var(--warn)") : "var(--muted)";
       const schedColor  = projSchedVar != null ? (projSchedVar > 0  ? "var(--bad)" : projSchedVar < 0 ? "var(--good)" : "var(--text)") : "var(--muted)";
 
@@ -1674,16 +1714,51 @@
             '<div class="bench-chart-note">Schedule variance = Actual ISD Year − Planned ISD Year (years). ' +
               'Box = Q1–Q3, centre line = median, dashes = P10–P90. Click a dot for details.</div>' +
           '</div>' +
+        '</div>' +
+        '<div class="bench-charts" style="margin-top:12px">' +
+          '<div class="chart-card">' +
+            '<h2>Actual Cost vs ' + projectType + ' ' + groupLabel + ' Peers</h2>' +
+            '<div class="bench-chart-legend">' +
+              '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
+              (projActualCost !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + actualCostStr + '</span>' : '') +
+            '</div>' +
+            benchStatRowAbsHtml(actualCostStats, "B", 2) +
+            (projActualCost === null ? '<div class="bench-no-data-notice">⚠ No Final Cost data recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            '<canvas id="bench-chart-actual-cost"></canvas>' +
+            '<div class="chart-detail" id="bench-detail-actual-cost"></div>' +
+            '<div class="bench-chart-note">Actual cost = Final Cost ($B). Where Final Cost is unavailable, FID Cost is used as a proxy. ' +
+              'Box = Q1–Q3, centre line = median, dashes = P10–P90. Click a dot for details.</div>' +
+          '</div>' +
+          '<div class="chart-card">' +
+            '<h2>Actual Duration vs ' + projectType + ' ' + groupLabel + ' Peers</h2>' +
+            '<div class="bench-chart-legend">' +
+              '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
+              (projActualDur !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + actualDurStr + '</span>' : '') +
+            '</div>' +
+            benchStatRowAbsHtml(actualDurStats, " yrs", 1) +
+            (projActualDur === null ? '<div class="bench-no-data-notice">⚠ No duration data recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            '<canvas id="bench-chart-actual-dur"></canvas>' +
+            '<div class="chart-detail" id="bench-detail-actual-dur"></div>' +
+            '<div class="bench-chart-note">Actual duration = Actual ISD Year − FID Year (years from investment decision to completion). ' +
+              'Box = Q1–Q3, centre line = median, dashes = P10–P90. Click a dot for details.</div>' +
+          '</div>' +
         '</div>';
 
       // Give the DOM a tick to render the canvases, then draw
       setTimeout(() => {
-        renderBenchChart("bench-chart-cost",  costStats,  projCostVar,  peerCostData,  name, "Cost Variance (%)",       "%",    "bench-detail-cost");
-        renderBenchChart("bench-chart-sched", schedStats, projSchedVar, peerSchedData, name, "Schedule Variance (yrs)", " yrs", "bench-detail-sched");
+        renderBenchChart("bench-chart-cost",        costStats,       projCostVar,    peerCostData,       name, "Cost Variance (%)",       "%",    "bench-detail-cost");
+        renderBenchChart("bench-chart-sched",       schedStats,      projSchedVar,   peerSchedData,      name, "Schedule Variance (yrs)", " yrs", "bench-detail-sched");
+        renderBenchChart("bench-chart-actual-cost", actualCostStats, projActualCost, peerActualCostData, name, "Actual Cost ($B)",        "B",    "bench-detail-actual-cost", { isAbsolute: true, decimals: 2 });
+        renderBenchChart("bench-chart-actual-dur",  actualDurStats,  projActualDur,  peerActualDurData,  name, "Duration (yrs)",          " yrs", "bench-detail-actual-dur",  { isAbsolute: true, decimals: 1 });
       }, 10);
     }
 
-    function renderBenchChart(canvasId, stats, projValue, peerData, projName, xLabel, unit, detailPanelId) {
+    function renderBenchChart(canvasId, stats, projValue, peerData, projName, xLabel, unit, detailPanelId, opts) {
+      opts = opts || {};
+      const isAbsolute = !!opts.isAbsolute;
+      const dec = opts.decimals !== undefined ? opts.decimals : 1;
+      function fmtTick(v) { return isAbsolute ? v.toFixed(dec) + unit : (v >= 0 ? "+" : "") + v.toFixed(0) + unit; }
+      function fmtVal(v)  { return isAbsolute ? v.toFixed(dec) + unit : (v >= 0 ? "+" : "") + v.toFixed(1) + unit; }
       const el = document.getElementById(canvasId);
       if (!el) return;
 
@@ -1786,7 +1861,7 @@
                 label: ctx => {
                   const d = ctx.raw;
                   const name = (d._meta && d._meta.name) || d._name || "";
-                  return name + ": " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + unit;
+                  return name + ": " + fmtVal(d.x);
                 }
               }
             }
@@ -1810,7 +1885,7 @@
               grid: { color: "#eee" },
               ticks: {
                 color: "#000", font: { size: 11 },
-                callback: v => (v >= 0 ? "+" : "") + v.toFixed(0) + unit
+                callback: v => fmtTick(v)
               }
             },
             y: {
