@@ -481,6 +481,7 @@
     const typeToSubtypes = {};  // { "Generation": Set<"Wind", "Hydro Generation", ...>, ... }
     const chartInstances = {};
     let projectsGrid = null;
+    let benchPeerGrid = null;
 
     function destroyChart(id) {
       if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
@@ -1537,6 +1538,28 @@
       return null;
     }
 
+    function benchDurVar(r) {
+      // Schedule overrun as % of planned duration: (Actual ISD - FID ISD) / (FID ISD - FID Year) * 100
+      const fidY    = parseInt(r["FID Year"]);
+      const fidIsd  = parseInt(r["FID ISD Year"]);
+      const actIsd  = parseInt(r["Actual ISD Year"]);
+      if (isNaN(fidY) || isNaN(fidIsd) || isNaN(actIsd)) return null;
+      if (fidY < 1900 || fidIsd < 1900 || actIsd < 1900) return null;
+      const planned = fidIsd - fidY;
+      if (planned <= 0) return null;
+      return ((actIsd - fidIsd) / planned) * 100;
+    }
+
+    // Global lookup used by peer-table row clicks to avoid string-escaping issues
+    window._benchNameLookup = [];
+    window._benchRowClick = function(idx) {
+      const name = window._benchNameLookup[idx];
+      if (!name) return;
+      const inp = document.getElementById("bench-search");
+      if (inp) inp.value = name;
+      renderBenchmarking(name);
+    };
+
     // ── Shared helper: populate and show a .chart-detail panel from a _meta object ──
     function showChartDetailPanel(panel, d) {
       if (!panel || !d) return;
@@ -1742,6 +1765,10 @@
             '<div class="bench-chart-note">Actual duration = Actual ISD Year − FID Year (years from investment decision to completion). ' +
               'Box = Q1–Q3, centre line = median, dashes = P10–P90. Click a dot for details.</div>' +
           '</div>' +
+        '</div>' +
+        '<div class="table-card" style="margin-top:20px">' +
+          '<h2 id="bench-peer-table-title">Peer projects (loading…)</h2>' +
+          '<div id="bench-peer-grid"></div>' +
         '</div>';
 
       // Give the DOM a tick to render the canvases, then draw
@@ -1751,6 +1778,66 @@
         renderBenchChart("bench-chart-actual-cost", actualCostStats, projActualCost, peerActualCostData, name, "Actual Cost ($B)",        "B",    "bench-detail-actual-cost", { isAbsolute: true, decimals: 2 });
         renderBenchChart("bench-chart-actual-dur",  actualDurStats,  projActualDur,  peerActualDurData,  name, "Duration (yrs)",          " yrs", "bench-detail-actual-dur",  { isAbsolute: true, decimals: 1 });
       }, 10);
+
+      // ── Peer project table ──────────────────────────────────────────────────
+      // Build rows: selected project first (highlighted), then all peers
+      const peerTableRows = [project, ...peers];
+      window._benchNameLookup = peerTableRows.map(r => r["Project Name"]);
+
+      const tableTitle = document.getElementById("bench-peer-table-title");
+      if (tableTitle) tableTitle.textContent = "Peer projects — " + projectType + " (" + (peerTableRows.length) + " total, including selected)";
+
+      const tableData = peerTableRows.map((r, idx) => {
+        const isSelected = r["Project Name"] === name;
+        const fidCost  = parseFloat(r["FID Cost (when Approved)"]);
+        const finCost  = parseFloat(r["Final Cost"]);
+        const costPct  = benchCostVar(r);
+        const durPct   = benchDurVar(r);
+        const nameCell = isSelected
+          ? gridjs.html('<span style="color:var(--accent);font-weight:700;cursor:default" title="Selected project">▶ ' + (r["Project Name"] || "") + '</span>')
+          : gridjs.html('<span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick="window._benchRowClick(' + idx + ')">' + (r["Project Name"] || "") + '</span>');
+        const costCell = costPct != null
+          ? gridjs.html('<span style="color:' + (costPct > 20 ? 'var(--bad)' : costPct < 0 ? 'var(--good)' : 'var(--warn)') + ';font-weight:600">' + (costPct >= 0 ? '+' : '') + costPct.toFixed(1) + '%</span>')
+          : "";
+        const durCell = durPct != null
+          ? gridjs.html('<span style="color:' + (durPct > 20 ? 'var(--bad)' : durPct < 0 ? 'var(--good)' : 'var(--warn)') + ';font-weight:600">' + (durPct >= 0 ? '+' : '') + durPct.toFixed(1) + '%</span>')
+          : "";
+        return [
+          nameCell,
+          r["Sub Type"] || "",
+          r["FID Year"] || "",
+          (!isNaN(fidCost) && fidCost > 0) ? "$" + fidCost.toFixed(2) + "B" : "",
+          r["FID ISD Year"] || "",
+          (!isNaN(finCost) && finCost > 0) ? "$" + finCost.toFixed(2) + "B" : "",
+          r["Actual ISD Year"] || "",
+          costCell,
+          durCell
+        ];
+      });
+
+      if (benchPeerGrid) {
+        benchPeerGrid.destroy();
+        benchPeerGrid = null;
+      }
+      const peerGridEl = document.getElementById("bench-peer-grid");
+      if (peerGridEl) {
+        benchPeerGrid = new gridjs.Grid({
+          columns: [
+            { name: "Project Name", width: "260px" },
+            { name: "Sub Type",     width: "160px" },
+            { name: "FID Year",     width: "80px"  },
+            { name: "FID Cost",     width: "90px"  },
+            { name: "FID ISD Yr",   width: "90px"  },
+            { name: "Actual Cost",  width: "100px" },
+            { name: "Actual ISD",   width: "90px"  },
+            { name: "Cost Var %",   width: "90px"  },
+            { name: "Dur Var %",    width: "90px"  }
+          ],
+          data: tableData,
+          sort: true,
+          style: { table: { "white-space": "nowrap" } }
+        }).render(peerGridEl);
+      }
     }
 
     function renderBenchChart(canvasId, stats, projValue, peerData, projName, xLabel, unit, detailPanelId, opts) {
@@ -1773,131 +1860,4 @@
       const peerDots = peerData.map(p => {
         const r = p.row || {};
         const fidCostRaw   = parseFloat(r["FID Cost (when Approved)"]);
-        const finalCostRaw = parseFloat(r["Final Cost"]);
-        return {
-          x: p.value,
-          y: (strHash(p.name) / 1000 - 0.5) * 1.4,
-          _meta: {
-            name:          p.name,
-            type:          (r["Type"]        || "").trim(),
-            subType:       (r["Sub Type"]    || "").trim(),
-            country:       (r["Country"]     || "").trim(),
-            company:       (r["Company "]    || "").trim(),
-            source:        (r["Source"]      || "").trim(),
-            fidCost:       (!isNaN(fidCostRaw)   && fidCostRaw   > 0) ? fidCostRaw   : null,
-            finalCost:     (!isNaN(finalCostRaw) && finalCostRaw > 0) ? finalCostRaw : null,
-            fidIsdYear:    (r["FID ISD Year"]    || "").toString().trim(),
-            actualIsdYear: (r["Actual ISD Year"] || "").toString().trim(),
-          }
-        };
-      });
-
-      const datasets = [];
-
-      if (peerDots.length > 0) {
-        datasets.push({
-          label: "Peer projects",
-          data: peerDots,
-          backgroundColor: "rgba(31,78,121,0.22)",
-          borderColor:     "rgba(31,78,121,0.45)",
-          borderWidth: 1,
-          pointRadius: 5,
-          pointHoverRadius: 8,
-          pointHitRadius: 12,
-        });
-      }
-
-      if (projValue !== null) {
-        datasets.push({
-          label: projName,
-          data: [{ x: projValue, y: 0, _name: projName }],
-          backgroundColor: "#15803d",
-          borderColor:     "#15803d",
-          borderWidth: 2,
-          pointRadius: 9,
-          pointHoverRadius: 11,
-          pointStyle: "triangle",
-        });
-      }
-
-      if (!datasets.length) {
-        el.style.display = "none";
-        const note = el.nextElementSibling;
-        if (note) note.insertAdjacentHTML("beforebegin", '<div class="bench-empty">Not enough data to display this chart.</div>');
-        return;
-      }
-
-      // Compute x-axis bounds with padding
-      const allVals = peerData.map(p => p.value);
-      if (projValue !== null) allVals.push(projValue);
-      const xMinRaw = Math.min(...allVals);
-      const xMaxRaw = Math.max(...allVals);
-      const xPad = Math.max((xMaxRaw - xMinRaw) * 0.18, 3);
-
-      destroyChart(canvasId);
-      chartInstances[canvasId] = new Chart(el, {
-        type: "scatter",
-        data: { datasets },
-        plugins: [boxPlotPlugin],
-        options: {
-          maintainAspectRatio: false,
-          animation: { duration: 250 },
-          interaction: { mode: "nearest", intersect: false, axis: "xy" },
-          onHover: (evt, activeEls) => {
-            if (evt.native) evt.native.target.style.cursor = activeEls.length ? "pointer" : "default";
-          },
-          plugins: {
-            boxPlotBenchmark: {
-              box: stats ? {
-                q1: stats.q1, q2: stats.q2, q3: stats.q3,
-                whiskerLow: stats.whiskerLow, whiskerHigh: stats.whiskerHigh
-              } : null,
-              unit
-            },
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                title: () => "",
-                label: ctx => {
-                  const d = ctx.raw;
-                  const name = (d._meta && d._meta.name) || d._name || "";
-                  return name + ": " + fmtVal(d.x);
-                }
-              }
-            }
-          },
-          onClick: (evt, els) => {
-            const panel = document.getElementById(detailPanelId);
-            if (!panel) return;
-            if (els.length) {
-              const d = els[0].element.$context.raw._meta;
-              if (d) showChartDetailPanel(panel, d);
-            } else {
-              panel.classList.remove("active");
-            }
-          },
-          scales: {
-            x: {
-              type: "linear",
-              min: xMinRaw - xPad,
-              max: xMaxRaw + xPad,
-              title: { display: true, text: xLabel, color: "#5b5b58", font: { size: 12 } },
-              grid: { color: "#eee" },
-              ticks: {
-                color: "#000", font: { size: 11 },
-                callback: v => fmtTick(v)
-              }
-            },
-            y: {
-              type: "linear",
-              min: -1,
-              max: 1,
-              display: false
-            }
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+        const fi
