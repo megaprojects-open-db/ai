@@ -1685,6 +1685,7 @@
         return "Better than " + pct + "% of " + projectType + " peers (" + peerArr.length + " with data)";
       }
 
+      if (benchPeerGrid) { benchPeerGrid.destroy(); benchPeerGrid = null; }
       content.innerHTML =
         '<div class="bench-summary">' +
           '<div class="bench-summary-item">' +
@@ -1815,7 +1816,6 @@
         ];
       });
 
-      if (benchPeerGrid) { benchPeerGrid.destroy(); benchPeerGrid = null; }
       const peerGridEl = document.getElementById("bench-peer-grid");
       if (peerGridEl) {
         benchPeerGrid = new gridjs.Grid({
