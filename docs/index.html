@@ -1891,7 +1891,8 @@
           '</div>' +
         '</div>' +
         '<div class="table-card" style="margin-top:20px">' +
-          '<h2 id="bench-peer-table-title">Peer projects (loading…)' +
+          '<h2 id="bench-peer-table-title">' +
+            '<span id="bench-peer-table-text">Peer projects (loading…)</span>' +
             '<button class="bench-export-btn" onclick="window._benchExport()" title="Export peer data as tab-separated text">Export ↗</button>' +
           '</h2>' +
           '<div id="bench-peer-grid"></div>' +
@@ -1910,8 +1911,8 @@
       window._benchNameLookup = peerTableRows.map(r => r["Project Name"]);
       window._benchPeerData   = peerTableRows;  // used by export function
 
-      const tableTitle = document.getElementById("bench-peer-table-title");
-      if (tableTitle) tableTitle.textContent =
+      const tableText = document.getElementById("bench-peer-table-text");
+      if (tableText) tableText.textContent =
         "Peer projects — " + projectType + " (" + peerTableRows.length + " total, including selected)";
 
       const tableData = peerTableRows.map((r, idx) => {
