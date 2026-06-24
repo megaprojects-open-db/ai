@@ -1642,7 +1642,7 @@
           '<p class="bench-export-hint">Tab-separated format — paste directly into Excel, or share with a chatbot. ' + rows.length + ' rows.</p>' +
           '<textarea class="bench-export-textarea" readonly>' + tsv.replace(/</g,"&lt;") + '</textarea>' +
           '<div class="bench-export-actions">' +
-            '<button class="bench-export-close" onclick="this.closest('.bench-export-overlay').remove()">Close</button>' +
+            '<button class="bench-export-close">Close</button>' +
             '<button class="bench-export-copy">Copy to clipboard</button>' +
           '</div>' +
         '</div>';
@@ -1668,7 +1668,8 @@
         });
       });
 
-      // Close on backdrop click
+      // Close button and backdrop
+      overlay.querySelector(".bench-export-close").addEventListener("click", function() { overlay.remove(); });
       overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
     };
 
