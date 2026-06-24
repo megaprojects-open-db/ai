@@ -220,6 +220,43 @@
   .chart-detail .close:hover { color: var(--bad); }
 
   /* ── Benchmarking tab ──────────────────────────────────────────────────── */
+  /* ── Benchmarking — export modal ──────────────────────────────────────────── */
+  .bench-export-btn {
+    float: right; padding: 5px 12px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: #fff; cursor: pointer; color: var(--text-muted);
+  }
+  .bench-export-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .bench-export-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bench-export-dialog {
+    background: var(--card); border-radius: 10px; padding: 24px 28px;
+    width: min(680px, 92vw); box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .bench-export-dialog h3 { margin: 0; font-size: 15px; font-weight: 700; }
+  .bench-export-hint { font-size: 12px; color: var(--text-muted); margin: 0; }
+  .bench-export-textarea {
+    width: 100%; height: 260px; font-family: monospace; font-size: 12px;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    padding: 10px 12px; resize: vertical; color: var(--text);
+    background: var(--bg); box-sizing: border-box;
+  }
+  .bench-export-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .bench-export-copy {
+    padding: 8px 18px; font-size: 13px; font-weight: 600; border: none;
+    border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  .bench-export-copy:hover { background: var(--accent-hover); }
+  .bench-export-copy.copied { background: var(--good); }
+  .bench-export-close {
+    padding: 8px 16px; font-size: 13px; font-weight: 500;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: #fff; cursor: pointer; color: var(--text-muted);
+  }
+  .bench-export-close:hover { background: var(--bg); }
   .bench-controls {
     background: var(--card); border: 1px solid var(--border); border-radius: 8px;
     padding: 16px 20px; margin-bottom: 20px;
@@ -1550,6 +1587,91 @@
       return ((actIsd - fidIsd) / planned) * 100;
     }
 
+
+    // Export peer project data as TSV via clipboard modal
+    window._benchExport = function() {
+      const rows = window._benchPeerData || [];
+      if (!rows.length) { alert("No peer data to export. Select a project first."); return; }
+
+      const headers = ["Project Name","Sub Type","FID Year","FID Cost ($B)","FID ISD Year","Actual Cost ($B)","Actual ISD Year","Cost Var %","Dur Var %"];
+
+      function fmtCost(r, field) {
+        const v = parseFloat(r[field]);
+        return (!isNaN(v) && v > 0) ? v.toFixed(2) : "";
+      }
+      function fmtPct(val) {
+        if (val == null) return "";
+        return (val >= 0 ? "+" : "") + val.toFixed(1) + "%";
+      }
+      function benchCostPct(r) {
+        const fid = parseFloat(r["FID Cost (when Approved)"]);
+        const fin = parseFloat(r["Final Cost"]);
+        if (!isNaN(fid) && fid > 0 && !isNaN(fin) && fin > 0) return (fin - fid) / fid * 100;
+        return null;
+      }
+      function benchDurPct(r) {
+        const fidY = parseInt(r["FID Year"]), fidIsd = parseInt(r["FID ISD Year"]), actIsd = parseInt(r["Actual ISD Year"]);
+        if ([fidY,fidIsd,actIsd].some(isNaN)) return null;
+        if (fidY < 1900 || fidIsd < 1900 || actIsd < 1900) return null;
+        const planned = fidIsd - fidY;
+        return planned > 0 ? ((actIsd - fidIsd) / planned) * 100 : null;
+      }
+
+      const lines = [headers.join("\t")];
+      rows.forEach(r => {
+        lines.push([
+          r["Project Name"]  || "",
+          r["Sub Type"]      || "",
+          r["FID Year"]      || "",
+          fmtCost(r, "FID Cost (when Approved)"),
+          r["FID ISD Year"]  || "",
+          fmtCost(r, "Final Cost"),
+          r["Actual ISD Year"] || "",
+          fmtPct(benchCostPct(r)),
+          fmtPct(benchDurPct(r))
+        ].join("\t"));
+      });
+      const tsv = lines.join("\n");
+
+      // Build modal
+      const overlay = document.createElement("div");
+      overlay.className = "bench-export-overlay";
+      overlay.innerHTML =
+        '<div class="bench-export-dialog">' +
+          '<h3>Export peer project data</h3>' +
+          '<p class="bench-export-hint">Tab-separated format — paste directly into Excel, or share with a chatbot. ' + rows.length + ' rows.</p>' +
+          '<textarea class="bench-export-textarea" readonly>' + tsv.replace(/</g,"&lt;") + '</textarea>' +
+          '<div class="bench-export-actions">' +
+            '<button class="bench-export-close" onclick="this.closest('.bench-export-overlay').remove()">Close</button>' +
+            '<button class="bench-export-copy">Copy to clipboard</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(overlay);
+
+      // Auto-select text in textarea
+      const ta = overlay.querySelector("textarea");
+      ta.focus(); ta.select();
+
+      // Copy button handler
+      overlay.querySelector(".bench-export-copy").addEventListener("click", function() {
+        navigator.clipboard.writeText(tsv).then(() => {
+          this.textContent = "Copied!";
+          this.classList.add("copied");
+          setTimeout(() => { this.textContent = "Copy to clipboard"; this.classList.remove("copied"); }, 2000);
+        }).catch(() => {
+          // Fallback for older browsers
+          ta.select();
+          document.execCommand("copy");
+          this.textContent = "Copied!";
+          setTimeout(() => { this.textContent = "Copy to clipboard"; }, 2000);
+        });
+      });
+
+      // Close on backdrop click
+      overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
+    };
+
     // Global lookup used by peer-table row clicks to avoid string-escaping issues
     window._benchNameLookup = [];
     window._benchRowClick = function(idx) {
@@ -1768,7 +1890,9 @@
           '</div>' +
         '</div>' +
         '<div class="table-card" style="margin-top:20px">' +
-          '<h2 id="bench-peer-table-title">Peer projects (loading…)</h2>' +
+          '<h2 id="bench-peer-table-title">Peer projects (loading…)' +
+            '<button class="bench-export-btn" onclick="window._benchExport()" title="Export peer data as tab-separated text">Export ↗</button>' +
+          '</h2>' +
           '<div id="bench-peer-grid"></div>' +
         '</div>';
 
@@ -1783,6 +1907,7 @@
       // ── Peer project table ──────────────────────────────────────────────────────
       const peerTableRows = [project, ...peers];
       window._benchNameLookup = peerTableRows.map(r => r["Project Name"]);
+      window._benchPeerData   = peerTableRows;  // used by export function
 
       const tableTitle = document.getElementById("bench-peer-table-title");
       if (tableTitle) tableTitle.textContent =
