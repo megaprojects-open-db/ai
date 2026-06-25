@@ -1948,7 +1948,7 @@
       const _myVersion = ++benchPeerGridVersion;
       setTimeout(() => {
         if (_myVersion !== benchPeerGridVersion) return;
-        if (benchPeerGrid) { benchPeerGrid.destroy(); benchPeerGrid = null; }
+        if (benchPeerGrid) { try { benchPeerGrid.destroy(); } catch(e) {} benchPeerGrid = null; }
         const peerGridEl = document.getElementById("bench-peer-grid");
         if (peerGridEl) {
           benchPeerGrid = new gridjs.Grid({
