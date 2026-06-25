@@ -1943,25 +1943,28 @@
         ];
       });
 
-      const peerGridEl = document.getElementById("bench-peer-grid");
-      if (peerGridEl) {
-        benchPeerGrid = new gridjs.Grid({
-          columns: [
-            { name: "Project Name", width: "260px" },
-            { name: "Sub Type",     width: "160px" },
-            { name: "FID Year",     width: "80px"  },
-            { name: "FID Cost",     width: "90px"  },
-            { name: "FID ISD Yr",   width: "90px"  },
-            { name: "Actual Cost",  width: "100px" },
-            { name: "Actual ISD",   width: "90px"  },
-            { name: "Cost Var %",   width: "90px"  },
-            { name: "Dur Var %",    width: "90px"  }
-          ],
-          data: tableData,
-          sort: true,
-          style: { table: { "white-space": "nowrap" } }
-        }).render(peerGridEl);
-      }
+      const _tableDataForGrid = tableData;
+      setTimeout(() => {
+        const peerGridEl = document.getElementById("bench-peer-grid");
+        if (peerGridEl) {
+          benchPeerGrid = new gridjs.Grid({
+            columns: [
+              { name: "Project Name", width: "260px" },
+              { name: "Sub Type",     width: "160px" },
+              { name: "FID Year",     width: "80px"  },
+              { name: "FID Cost",     width: "90px"  },
+              { name: "FID ISD Yr",   width: "90px"  },
+              { name: "Actual Cost",  width: "100px" },
+              { name: "Actual ISD",   width: "90px"  },
+              { name: "Cost Var %",   width: "90px"  },
+              { name: "Dur Var %",    width: "90px"  }
+            ],
+            data: _tableDataForGrid,
+            sort: true,
+            style: { table: { "white-space": "nowrap" } }
+          }).render(peerGridEl);
+        }
+      }, 0);
     }
 
     function renderBenchChart(canvasId, stats, projValue, peerData, projName, xLabel, unit, detailPanelId, opts) {
