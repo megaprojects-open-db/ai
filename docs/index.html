@@ -519,6 +519,7 @@
     const chartInstances = {};
     let projectsGrid = null;
     let benchPeerGrid = null;
+    let benchPeerGridVersion = 0;
 
     function destroyChart(id) {
       if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
@@ -1808,7 +1809,7 @@
         return "Better than " + pct + "% of " + projectType + " peers (" + peerArr.length + " with data)";
       }
 
-      if (benchPeerGrid) { benchPeerGrid.destroy(); benchPeerGrid = null; }
+      // grid destroy is now handled inside the deferred render (version-guarded)
       content.innerHTML =
         '<div class="bench-summary">' +
           '<div class="bench-summary-item">' +
@@ -1944,7 +1945,10 @@
       });
 
       const _tableDataForGrid = tableData;
+      const _myVersion = ++benchPeerGridVersion;
       setTimeout(() => {
+        if (_myVersion !== benchPeerGridVersion) return;
+        if (benchPeerGrid) { benchPeerGrid.destroy(); benchPeerGrid = null; }
         const peerGridEl = document.getElementById("bench-peer-grid");
         if (peerGridEl) {
           benchPeerGrid = new gridjs.Grid({
