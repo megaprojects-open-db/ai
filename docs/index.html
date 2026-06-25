@@ -511,6 +511,7 @@
     });
 
     // Global state
+    const DATA_REFRESH_DATE = "22 Jun 2026";  // update when pushing new master.csv
     let allRows = [];
     const filters = { Country: [], Type: [], SubType: [], YearRange: null, CostRange: null };
     let yearBounds = null;  // [min, max] of Actual ISD Year in data
@@ -578,9 +579,15 @@
         allRows = parsed.data.filter(r => r["Project Name"]);
         if (allRows.length === 0) throw new Error("CSV parsed but no rows had a Project Name");
 
-        const today = new Date().toISOString().slice(0, 10);
+        const now = new Date();
+        const dashTs = now.toLocaleString("en-US", {
+          year: "numeric", month: "short", day: "numeric",
+          hour: "2-digit", minute: "2-digit"
+        });
         document.getElementById("last-updated").textContent =
-          "Last refreshed " + today + " – " + allRows.length + " projects";
+          "Data refreshed " + DATA_REFRESH_DATE
+          + "  ·  Dashboard loaded " + dashTs
+          + "  ·  " + allRows.length + " projects";
 
         populateFilters(allRows);
         applyFilters();
