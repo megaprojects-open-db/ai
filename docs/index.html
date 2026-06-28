@@ -602,7 +602,7 @@
     });
 
     // Global state
-    const DATA_REFRESH_DATE = "22 Jun 2026";  // update when pushing new master.csv
+    const DATA_REFRESH_DATE = "22 Jun 2026";  // fallback only — auto-detected from CSV Last-Modified header
     let allRows = [];
     const filters = { Country: [], Type: [], SubType: [], YearRange: null, CostRange: null };
     let yearBounds = null;  // [min, max] of Actual ISD Year in data
@@ -665,8 +665,17 @@
     const overview = document.getElementById("overview-content");
 
     fetch(CSV_URL, { cache: "no-store" })
-      .then(r => { if (!r.ok) throw new Error("CSV fetch failed with HTTP " + r.status); return r.text(); })
-      .then(text => {
+      .then(r => {
+        if (!r.ok) throw new Error("CSV fetch failed with HTTP " + r.status);
+        var lastMod = r.headers.get("Last-Modified");
+        var dataDate = DATA_REFRESH_DATE;
+        if (lastMod) {
+          var d = new Date(lastMod);
+          dataDate = d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+        }
+        return r.text().then(function(text) { return { text: text, dataDate: dataDate }; });
+      })
+      .then(function(payload) { var text = payload.text; var dataDate = payload.dataDate;
         const parsed = Papa.parse(text, { header: true, dynamicTyping: false, skipEmptyLines: true });
         if (parsed.errors && parsed.errors.length) console.warn("CSV parse warnings:", parsed.errors);
         allRows = parsed.data.filter(r => r["Project Name"]);
@@ -677,7 +686,7 @@
           hour: "2-digit", minute: "2-digit"
         });
         document.getElementById("last-updated").textContent =
-          "Data refreshed " + DATA_REFRESH_DATE
+          "Data refreshed " + dataDate
           + "  ·  Dashboard updated " + htmlUpdated
           + "  ·  " + allRows.length + " projects";
 
