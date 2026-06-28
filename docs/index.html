@@ -336,6 +336,23 @@
   .comparison-chart-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
   .comparison-chart-wrap { position: relative; height: 400px; }
 
+
+  /* ── Schedule sort toggle ─────────────────────────────────────────────── */
+  .schedule-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .schedule-controls h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  /* ── Research Papers tab ──────────────────────────────────────────────── */
+  .research-section { margin-bottom: 28px; }
+  .research-section-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .paper-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; text-decoration: none; color: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+  .paper-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .paper-accent { width: 4px; flex-shrink: 0; border-radius: 2px; align-self: stretch; }
+  .paper-body { flex: 1; }
+  .paper-title { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 3px 0; }
+  .paper-meta { font-size: 12px; color: var(--text-muted); margin: 0 0 6px 0; }
+  .paper-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .paper-tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: var(--accent-light); color: var(--accent); }
+  .paper-link { font-size: 11px; color: var(--text-muted); }
+
 </style>
 </head>
 <body>
@@ -399,6 +416,7 @@
       <button data-tab="details">Project Details</button>
       <button data-tab="projects">Project List</button>
       <button data-tab="comparison">Comparison</button>
+      <button data-tab="research">Research</button>
       <button data-tab="about">About &amp; methodology</button>
     </nav>
 
@@ -457,7 +475,16 @@
 
     <div id="tab-schedule" class="tab-panel">
       <div class="gantt-card">
-        <h2>Construction timelines (most recent 30)</h2>
+        <div class="schedule-controls">
+          <h2 id="gantt-heading">Construction timelines (most recent 30 by year)</h2>
+          <div class="bench-group-toggle">
+            <label>Sort by</label>
+            <div class="bench-toggle-btns">
+              <button class="bench-toggle-btn active" id="sched-sort-year" data-sort="year">Year</button>
+              <button class="bench-toggle-btn" id="sched-sort-cost" data-sort="cost">Cost</button>
+            </div>
+          </div>
+        </div>
         <div class="gantt-wrapper"><canvas id="chart-gantt"></canvas></div>
         <div class="gantt-legend" id="gantt-legend"></div>
       </div>
@@ -473,6 +500,26 @@
           <h2>Actual cost ($B) vs Actual duration (yrs)</h2>
           <div class="comparison-chart-wrap"><canvas id="chart-cmp-actual"></canvas></div>
         </div>
+      </div>
+    </div>
+
+    <div id="tab-research" class="tab-panel">
+      <div class="gantt-card">
+        <div class="research-section">
+          <div class="research-section-title">Generation</div>
+          <a class="paper-card" href="https://info.ornl.gov/sites/publications/files/Pub53978.pdf" target="_blank" rel="noopener">
+            <div class="paper-accent" style="background:#4f6ef7;"></div>
+            <div class="paper-body">
+              <p class="paper-title">Hydropower Baseline Cost Modeling</p>
+              <p class="paper-meta">Oak Ridge National Laboratory &nbsp;&middot;&nbsp; 2015</p>
+              <div class="paper-footer">
+                <span class="paper-tag">Generation</span>
+                <span class="paper-link">&#8599; info.ornl.gov/sites/publications/files/Pub53978.pdf</span>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">More papers will be added here over time. Each entry links to the original source.</div>
       </div>
     </div>
 
@@ -539,6 +586,15 @@
     }
     document.querySelectorAll(".tabs button").forEach(btn => {
       btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+    document.addEventListener("click", function(e) {
+      const btn = e.target.closest(".bench-toggle-btn[data-sort]");
+      if (!btn) return;
+      if (btn.dataset.sort === scheduleSort) return;
+      scheduleSort = btn.dataset.sort;
+      document.querySelectorAll(".bench-toggle-btn[data-sort]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      applyFilters();
     });
 
     // Global state
@@ -1464,14 +1520,27 @@
     }
 
     function renderSchedule(rows) {
-      const gantt = rows.map(r => {
+      const ganttAll = rows.map(r => {
         const s = parseInt(r["Construction Start Year"]); const e = parseInt(r["Actual ISD Year"]);
         if (isNaN(s) || isNaN(e) || s <= 0 || e <= 0 || e < s) return null;
         let cost = parseFloat(r["Final Cost"]);
         if (isNaN(cost) || cost <= 0) cost = parseFloat(r["FID Cost (when Approved)"]);
-        const costStr = (!isNaN(cost) && cost > 0) ? " $" + cost.toFixed(1) + "B" : "";
-        return { name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "", start: s, end: e, dur: e - s, costStr };
-      }).filter(Boolean).sort((a, b) => b.end - a.end).slice(0, 30);
+        const costVal = (!isNaN(cost) && cost > 0) ? cost : null;
+        const costStr = costVal != null ? "  $" + costVal.toFixed(1) + "B" : "";
+        const country = (r["Country"] || "").trim();
+        const prefix = country ? country + " · " : "";
+        return { name: r["Project Name"], type: r["Type"] || "Other", country, start: s, end: e, dur: e - s, costVal, costStr, prefix };
+      }).filter(Boolean);
+      if (scheduleSort === "cost") {
+        ganttAll.sort((a, b) => (b.costVal || 0) - (a.costVal || 0));
+      } else {
+        ganttAll.sort((a, b) => b.end - a.end);
+      }
+      const gantt = ganttAll.slice(0, 30);
+      const heading = document.getElementById("gantt-heading");
+      if (heading) heading.textContent = scheduleSort === "cost"
+        ? "Construction timelines (top 30 by cost)"
+        : "Construction timelines (most recent 30 by year)";
 
       const wrap = document.getElementById("chart-gantt").parentElement;
       if (gantt.length === 0) {
@@ -1489,7 +1558,7 @@
       const maxY = Math.max.apply(null, gantt.map(g => g.end)) + 1;
       makeChart("chart-gantt", {
         type: "bar",
-        data: { labels: gantt.map(g => trunc(g.name, 34) + g.costStr),
+        data: { labels: gantt.map(g => trunc(g.prefix + g.name, 42) + g.costStr),
                 datasets: [{ label: "Construction span", data: gantt.map(g => [g.start, g.end]),
                   backgroundColor: colors, borderColor: colors, borderWidth: 0,
                   borderRadius: 3, barPercentage: 0.78 }] },
@@ -1780,6 +1849,7 @@
     };
 
     let benchGroupBy = "Type";  // "Type" or "SubType" — default: Type
+    let scheduleSort = "year";  // "year" or "cost"
 
     function initBenchmarking() {
       const dl = document.getElementById("bench-project-list");
