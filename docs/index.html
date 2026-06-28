@@ -1558,6 +1558,35 @@
       const maxY = Math.max.apply(null, gantt.map(g => g.end)) + 1;
       makeChart("chart-gantt", {
         type: "bar",
+        plugins: [{
+          id: "ganttDurLabels",
+          afterDatasetsDraw(chart) {
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            ctx.save();
+            ctx.font = "bold 10px system-ui, sans-serif";
+            ctx.textBaseline = "middle";
+            meta.data.forEach((bar, i) => {
+              if (!gantt[i]) return;
+              const d = gantt[i].dur;
+              const label = d + " yr" + (d !== 1 ? "s" : "");
+              const barLeft  = Math.min(bar.x, bar.base);
+              const barRight = Math.max(bar.x, bar.base);
+              const barW = barRight - barLeft;
+              const textW = ctx.measureText(label).width;
+              if (barW >= textW + 10) {
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#fff";
+                ctx.fillText(label, barLeft + barW / 2, bar.y);
+              } else {
+                ctx.textAlign = "left";
+                ctx.fillStyle = "var(--text-muted, #888)";
+                ctx.fillText(label, barRight + 4, bar.y);
+              }
+            });
+            ctx.restore();
+          }
+        }],
         data: { labels: gantt.map(g => trunc(g.prefix + g.name, 42) + g.costStr),
                 datasets: [{ label: "Construction span", data: gantt.map(g => [g.start, g.end]),
                   backgroundColor: colors, borderColor: colors, borderWidth: 0,
@@ -1570,7 +1599,7 @@
                               } } } },
                    scales: { x: { type: "linear", position: "top", min: minY, max: maxY,
                                   ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v : "" }, grid: { color: "#eee" } },
-                             y: { ticks: { font: { size: 11 }, autoSkip: false }, grid: { display: false } } } }
+                             y: { ticks: { font: { size: 11 }, autoSkip: false, crossAlign: "near" }, grid: { display: false } } } }
       });
       const types = [];
       gantt.forEach(g => { if (types.indexOf(g.type) < 0) types.push(g.type); });
