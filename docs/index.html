@@ -1468,6 +1468,30 @@
 
       makeChart("chart-cost-bubble", {
         type: "bubble",
+        plugins: [{
+          id: "bubbleCostLabels",
+          afterDatasetsDraw: function(chart) {
+            var ctx = chart.ctx;
+            var meta = chart.getDatasetMeta(0);
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            meta.data.forEach(function(bubble, i) {
+              var d = data[i];
+              if (!d) return;
+              var label = "$" + d._cost.toFixed(1) + "B";
+              var r = bubble.options ? bubble.options.radius : (d.r || 0);
+              var diameter = r * 2;
+              ctx.font = "bold " + Math.min(11, Math.max(8, r * 0.6)) + "px system-ui, sans-serif";
+              var textW = ctx.measureText(label).width;
+              if (diameter >= textW + 6) {
+                ctx.fillStyle = "#fff";
+                ctx.fillText(label, bubble.x, bubble.y);
+              }
+            });
+            ctx.restore();
+          }
+        }],
         data: { datasets: [{
           label: "Projects",
           data: data,
@@ -1506,8 +1530,10 @@
               min: -0.5,
               max: items.length - 0.5,
               reverse: true,
+              afterBuildTicks: function(scale) {
+                scale.ticks = items.map(function(_, i) { return { value: i }; });
+              },
               ticks: {
-                stepSize: 1,
                 autoSkip: false,
                 font: { size: 11 },
                 callback: function(val) {
