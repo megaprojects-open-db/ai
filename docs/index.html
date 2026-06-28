@@ -394,6 +394,7 @@
     <nav class="tabs" id="tabs">
       <button data-tab="overview" class="active">Overview</button>
       <button data-tab="schedule">Schedule</button>
+      <button data-tab="cost">Cost</button>
       <button data-tab="benchmarking">Benchmarking</button>
       <button data-tab="details">Project Details</button>
       <button data-tab="projects">Project List</button>
@@ -407,6 +408,14 @@
 
     <div id="tab-projects" class="tab-panel">
       <div class="table-card"><h2>All projects</h2><div id="grid"></div></div>
+    </div>
+
+    <div id="tab-cost" class="tab-panel">
+      <div class="gantt-card">
+        <h2>Projects by cost (bubble size = final cost, most recent 30)</h2>
+        <div class="gantt-wrapper"><canvas id="chart-cost-bubble"></canvas></div>
+        <div class="gantt-legend" id="cost-legend"></div>
+      </div>
     </div>
 
     <div id="tab-benchmarking" class="tab-panel">
@@ -856,6 +865,7 @@
       renderOverview(filtered);
       renderProjects(filtered);
       renderSchedule(filtered);
+      renderCost(filtered);
       renderComparison(filtered);
     }
 
@@ -1347,11 +1357,120 @@
       }
     }
 
+
+    function renderCost(rows) {
+      // Build sorted list: projects with cost + completion year, most recent 30
+      const items = rows.map(function(r) {
+        const e = parseInt(r["Actual ISD Year"]);
+        if (isNaN(e) || e <= 0) return null;
+        let cost = parseFloat(r["Final Cost"]);
+        let costSource = "final";
+        if (isNaN(cost) || cost <= 0) { cost = parseFloat(r["FID Cost (when Approved)"]); costSource = "FID"; }
+        if (isNaN(cost) || cost <= 0) return null;
+        return {
+          name: r["Project Name"] || "",
+          type: (r["Type"] || "Other").trim(),
+          country: r["Country"] || "",
+          end: e, cost: cost, costSource: costSource
+        };
+      }).filter(Boolean).sort(function(a, b) { return b.end - a.end; }).slice(0, 30);
+
+      const wrap = document.getElementById("chart-cost-bubble") ?
+                   document.getElementById("chart-cost-bubble").parentElement : null;
+      if (!wrap) return;
+
+      if (items.length === 0) {
+        destroyChart("chart-cost-bubble");
+        wrap.innerHTML = '<div class="empty">No projects in current filter have both completion year and cost data.</div>';
+        document.getElementById("cost-legend").innerHTML = "";
+        return;
+      }
+      if (!document.getElementById("chart-cost-bubble")) {
+        wrap.innerHTML = '<canvas id="chart-cost-bubble"></canvas>';
+      }
+
+      const maxCost = Math.max.apply(null, items.map(function(g) { return g.cost; }));
+
+      // One dataset with per-point colors (bubble charts support backgroundColor arrays)
+      const data = items.map(function(g, i) {
+        return {
+          x: g.end,
+          y: i,
+          r: Math.max(5, Math.min(26, 5 + (g.cost / maxCost) * 21)),
+          _name: g.name, _type: g.type, _country: g.country,
+          _cost: g.cost, _costSource: g.costSource
+        };
+      });
+
+      makeChart("chart-cost-bubble", {
+        type: "bubble",
+        data: { datasets: [{
+          label: "Projects",
+          data: data,
+          backgroundColor: items.map(function(g) { return typeColor(g.type) + "bb"; }),
+          borderColor:     items.map(function(g) { return typeColor(g.type); }),
+          borderWidth: 1.5
+        }] },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: {
+              title: function() { return ""; },
+              label: function(ctx) {
+                var d = ctx.raw;
+                return [
+                  d._name,
+                  d._type + (d._country ? " · " + d._country : ""),
+                  (d._costSource === "final" ? "Final cost" : "FID cost") + ": $" + d._cost.toFixed(2) + "B",
+                  "Completed: " + d.x
+                ];
+              }
+            }}
+          },
+          scales: {
+            x: {
+              title: { display: true, text: "Completion year (Actual ISD)", color: "#5b5b58", font: { size: 12 } },
+              ticks: { stepSize: 1, autoSkip: false, maxRotation: 0,
+                       font: { size: 11, weight: "bold" }, color: "#000",
+                       callback: function(v) { return Number.isInteger(v) ? String(v) : ""; } },
+              grid: { color: "#eee" }
+            },
+            y: {
+              min: -0.5,
+              max: items.length - 0.5,
+              reverse: true,
+              ticks: {
+                stepSize: 1,
+                autoSkip: false,
+                font: { size: 11 },
+                callback: function(val) {
+                  var idx = Math.round(val);
+                  return (idx >= 0 && idx < items.length) ? trunc(items[idx].name, 40) : "";
+                }
+              },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      // Legend (same style as Gantt)
+      var types = [];
+      items.forEach(function(g) { if (types.indexOf(g.type) < 0) types.push(g.type); });
+      document.getElementById("cost-legend").innerHTML = types.map(function(t) {
+        return '<span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:' + typeColor(t) + '"></span>' + t + '</span>';
+      }).join("");
+    }
+
     function renderSchedule(rows) {
       const gantt = rows.map(r => {
         const s = parseInt(r["Construction Start Year"]); const e = parseInt(r["Actual ISD Year"]);
         if (isNaN(s) || isNaN(e) || s <= 0 || e <= 0 || e < s) return null;
-        return { name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "", start: s, end: e, dur: e - s };
+        let cost = parseFloat(r["Final Cost"]);
+        if (isNaN(cost) || cost <= 0) cost = parseFloat(r["FID Cost (when Approved)"]);
+        const costStr = (!isNaN(cost) && cost > 0) ? " $" + cost.toFixed(1) + "B" : "";
+        return { name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "", start: s, end: e, dur: e - s, costStr };
       }).filter(Boolean).sort((a, b) => b.end - a.end).slice(0, 30);
 
       const wrap = document.getElementById("chart-gantt").parentElement;
@@ -1370,7 +1489,7 @@
       const maxY = Math.max.apply(null, gantt.map(g => g.end)) + 1;
       makeChart("chart-gantt", {
         type: "bar",
-        data: { labels: gantt.map(g => trunc(g.name, 42)),
+        data: { labels: gantt.map(g => trunc(g.name, 34) + g.costStr),
                 datasets: [{ label: "Construction span", data: gantt.map(g => [g.start, g.end]),
                   backgroundColor: colors, borderColor: colors, borderWidth: 0,
                   borderRadius: 3, barPercentage: 0.78 }] },
