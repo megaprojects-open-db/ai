@@ -328,6 +328,14 @@
   .bench-toggle-btn:last-child { border-right: none; }
   .bench-toggle-btn.active { background: var(--accent); color: #fff; }
   .bench-toggle-btn:hover:not(.active) { background: var(--accent-light); color: var(--accent); }
+
+  /* ── Comparison tab ──────────────────────────────────────────────────────── */
+  .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .comparison-grid { grid-template-columns: 1fr; } }
+  .comparison-chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+  .comparison-chart-card h2 { margin: 0 0 14px 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .comparison-chart-wrap { position: relative; height: 400px; }
+
 </style>
 </head>
 <body>
@@ -389,6 +397,7 @@
       <button data-tab="benchmarking">Benchmarking</button>
       <button data-tab="details">Project Details</button>
       <button data-tab="projects">Project List</button>
+      <button data-tab="comparison">Comparison</button>
       <button data-tab="about">About &amp; methodology</button>
     </nav>
 
@@ -442,6 +451,19 @@
         <h2>Construction timelines (most recent 30)</h2>
         <div class="gantt-wrapper"><canvas id="chart-gantt"></canvas></div>
         <div class="gantt-legend" id="gantt-legend"></div>
+      </div>
+    </div>
+
+    <div id="tab-comparison" class="tab-panel">
+      <div class="comparison-grid">
+        <div class="comparison-chart-card">
+          <h2>Cost variance (%) vs Schedule variance (yrs)</h2>
+          <div class="comparison-chart-wrap"><canvas id="chart-cmp-variance"></canvas></div>
+        </div>
+        <div class="comparison-chart-card">
+          <h2>Actual cost ($B) vs Actual duration (yrs)</h2>
+          <div class="comparison-chart-wrap"><canvas id="chart-cmp-actual"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -834,6 +856,161 @@
       renderOverview(filtered);
       renderProjects(filtered);
       renderSchedule(filtered);
+      renderComparison(filtered);
+    }
+
+
+    function renderComparison(rows) {
+
+      // ── Chart 1: Cost variance % (X) vs Schedule variance yrs (Y) ──────────
+      var pts1 = [];
+      rows.forEach(function(r) {
+        var cv = benchCostVar(r);
+        var sv = benchSchedVar(r);
+        if (cv == null || sv == null) return;
+        pts1.push({ x: cv, y: sv, name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "" });
+      });
+
+      var byType1 = {};
+      pts1.forEach(function(p) { (byType1[p.type] = byType1[p.type] || []).push(p); });
+      var ds1 = Object.keys(byType1).sort().map(function(t) {
+        return {
+          label: t,
+          data: byType1[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
+          backgroundColor: typeColor(t) + "cc",
+          borderColor: typeColor(t),
+          borderWidth: 1.5,
+          pointStyle: typeShape(t),
+          pointRadius: 7,
+          pointHoverRadius: 10,
+          pointHitRadius: 14
+        };
+      });
+
+      var wrap1 = document.getElementById("chart-cmp-variance");
+      if (wrap1) {
+        if (ds1.length === 0) {
+          destroyChart("chart-cmp-variance");
+          wrap1.parentElement.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Not enough data for current filters.</div>';
+        } else {
+          makeChart("chart-cmp-variance", {
+            type: "scatter",
+            data: { datasets: ds1 },
+            options: {
+              maintainAspectRatio: false,
+              interaction: { mode: "nearest", intersect: false, axis: "xy" },
+              plugins: {
+                legend: { position: "top", align: "end", labels: { font: { size: 12 }, padding: 12, usePointStyle: true, boxWidth: 8,
+                  generateLabels: function(chart) {
+                    return Chart.defaults.plugins.legend.labels.generateLabels(chart).map(function(lbl, i) {
+                      lbl.pointStyle = chart.data.datasets[i].pointStyle; return lbl;
+                    });
+                  }
+                }},
+                tooltip: { callbacks: {
+                  title: function() { return ""; },
+                  label: function(ctx) {
+                    var d = ctx.raw;
+                    return [
+                      d._name,
+                      d._type + (d._country ? " · " + d._country : ""),
+                      "Cost var: " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + "%",
+                      "Schedule var: " + (d.y >= 0 ? "+" : "") + d.y.toFixed(1) + " yrs"
+                    ];
+                  }
+                }}
+              },
+              scales: {
+                x: {
+                  title: { display: true, text: "Cost variance (%)", color: "#5b5b58", font: { size: 12 } },
+                  ticks: { font: { size: 11 }, color: "#000", callback: function(v) { return (v >= 0 ? "+" : "") + v + "%"; } },
+                  grid: { color: "#eee" }
+                },
+                y: {
+                  title: { display: true, text: "Schedule variance (yrs)", color: "#5b5b58", font: { size: 12 } },
+                  ticks: { font: { size: 11 }, color: "#000", callback: function(v) { return (v >= 0 ? "+" : "") + v; } },
+                  grid: { color: "#eee" }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // ── Chart 2: Actual cost (X) vs Actual duration (Y) ────────────────────
+      var pts2 = [];
+      rows.forEach(function(r) {
+        var ac = benchActualCost(r);
+        var ad = benchActualDuration(r);
+        if (ac == null || ad == null) return;
+        pts2.push({ x: ac, y: ad, name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "" });
+      });
+
+      var byType2 = {};
+      pts2.forEach(function(p) { (byType2[p.type] = byType2[p.type] || []).push(p); });
+      var ds2 = Object.keys(byType2).sort().map(function(t) {
+        return {
+          label: t,
+          data: byType2[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
+          backgroundColor: typeColor(t) + "cc",
+          borderColor: typeColor(t),
+          borderWidth: 1.5,
+          pointStyle: typeShape(t),
+          pointRadius: 7,
+          pointHoverRadius: 10,
+          pointHitRadius: 14
+        };
+      });
+
+      var wrap2 = document.getElementById("chart-cmp-actual");
+      if (wrap2) {
+        if (ds2.length === 0) {
+          destroyChart("chart-cmp-actual");
+          wrap2.parentElement.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Not enough data for current filters.</div>';
+        } else {
+          makeChart("chart-cmp-actual", {
+            type: "scatter",
+            data: { datasets: ds2 },
+            options: {
+              maintainAspectRatio: false,
+              interaction: { mode: "nearest", intersect: false, axis: "xy" },
+              plugins: {
+                legend: { position: "top", align: "end", labels: { font: { size: 12 }, padding: 12, usePointStyle: true, boxWidth: 8,
+                  generateLabels: function(chart) {
+                    return Chart.defaults.plugins.legend.labels.generateLabels(chart).map(function(lbl, i) {
+                      lbl.pointStyle = chart.data.datasets[i].pointStyle; return lbl;
+                    });
+                  }
+                }},
+                tooltip: { callbacks: {
+                  title: function() { return ""; },
+                  label: function(ctx) {
+                    var d = ctx.raw;
+                    return [
+                      d._name,
+                      d._type + (d._country ? " · " + d._country : ""),
+                      "Actual cost: $" + d.x.toFixed(2) + "B",
+                      "Actual duration: " + d.y.toFixed(1) + " yrs"
+                    ];
+                  }
+                }}
+              },
+              scales: {
+                x: {
+                  title: { display: true, text: "Actual cost ($B)", color: "#5b5b58", font: { size: 12 } },
+                  ticks: { font: { size: 11 }, color: "#000", callback: function(v) { return "$" + v + "B"; } },
+                  grid: { color: "#eee" }
+                },
+                y: {
+                  title: { display: true, text: "Actual duration (yrs)", color: "#5b5b58", font: { size: 12 } },
+                  ticks: { font: { size: 11 }, color: "#000" },
+                  grid: { color: "#eee" }
+                }
+              }
+            }
+          });
+        }
+      }
     }
 
     function renderChips(filteredCount) {
