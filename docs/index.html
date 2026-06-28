@@ -416,7 +416,7 @@
       <button data-tab="details">Project Details</button>
       <button data-tab="projects">Project List</button>
       <button data-tab="comparison">Comparison</button>
-      <button data-tab="research">Research</button>
+      <button data-tab="research">Other Research Papers</button>
       <button data-tab="about">About &amp; methodology</button>
     </nav>
 
@@ -666,14 +666,13 @@
         allRows = parsed.data.filter(r => r["Project Name"]);
         if (allRows.length === 0) throw new Error("CSV parsed but no rows had a Project Name");
 
-        const now = new Date();
-        const dashTs = now.toLocaleString("en-US", {
+        const htmlUpdated = new Date(document.lastModified).toLocaleString("en-US", {
           year: "numeric", month: "short", day: "numeric",
           hour: "2-digit", minute: "2-digit"
         });
         document.getElementById("last-updated").textContent =
           "Data refreshed " + DATA_REFRESH_DATE
-          + "  ·  Dashboard loaded " + dashTs
+          + "  ·  Dashboard updated " + htmlUpdated
           + "  ·  " + allRows.length + " projects";
 
         populateFilters(allRows);
