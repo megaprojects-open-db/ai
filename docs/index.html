@@ -609,6 +609,7 @@
     let costBounds = null;  // [min, max] of Final Cost in data
     const typeToSubtypes = {};  // { "Generation": Set<"Wind", "Hydro Generation", ...>, ... }
     const chartInstances = {};
+    var cmpSelectedProject = null;  // cross-chart highlight state for Comparison tab
     let projectsGrid = null;
     let costGrid = null;
     let benchPeerGrid = null;
@@ -947,12 +948,12 @@
         return {
           label: t,
           data: byType1[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
-          backgroundColor: typeColor(t) + "cc",
-          borderColor: typeColor(t),
+          backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
+          borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
           pointStyle: typeShape(t),
-          pointRadius: 7,
-          pointHoverRadius: 10,
+          pointRadius: function(ctx) { return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? 10 : 5) : 7; },
+          pointHoverRadius: function(ctx) { return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? 13 : 6) : 10; },
           pointHitRadius: 14
         };
       });
@@ -969,6 +970,15 @@
             options: {
               maintainAspectRatio: false,
               interaction: { mode: "nearest", intersect: false, axis: "xy" },
+              onClick: function(e, elements) {
+                if (!elements.length) return;
+                var el = elements[0];
+                var name = ds1[el.datasetIndex].data[el.index]._name;
+                cmpSelectedProject = (cmpSelectedProject === name) ? null : name;
+                if (chartInstances["chart-cmp-variance"]) chartInstances["chart-cmp-variance"].update("none");
+                if (chartInstances["chart-cmp-actual"]) chartInstances["chart-cmp-actual"].update("none");
+              },
+              onHover: function(e, elements) { if (e.native) e.native.target.style.cursor = elements.length ? "pointer" : "default"; },
               plugins: {
                 legend: { position: "top", align: "end", labels: { font: { size: 12 }, padding: 12, usePointStyle: true, boxWidth: 8,
                   generateLabels: function(chart) {
@@ -1022,12 +1032,12 @@
         return {
           label: t,
           data: byType2[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
-          backgroundColor: typeColor(t) + "cc",
-          borderColor: typeColor(t),
+          backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
+          borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
           pointStyle: typeShape(t),
-          pointRadius: 7,
-          pointHoverRadius: 10,
+          pointRadius: function(ctx) { return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? 10 : 5) : 7; },
+          pointHoverRadius: function(ctx) { return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? 13 : 6) : 10; },
           pointHitRadius: 14
         };
       });
@@ -1044,6 +1054,15 @@
             options: {
               maintainAspectRatio: false,
               interaction: { mode: "nearest", intersect: false, axis: "xy" },
+              onClick: function(e, elements) {
+                if (!elements.length) return;
+                var el = elements[0];
+                var name = ds2[el.datasetIndex].data[el.index]._name;
+                cmpSelectedProject = (cmpSelectedProject === name) ? null : name;
+                if (chartInstances["chart-cmp-variance"]) chartInstances["chart-cmp-variance"].update("none");
+                if (chartInstances["chart-cmp-actual"]) chartInstances["chart-cmp-actual"].update("none");
+              },
+              onHover: function(e, elements) { if (e.native) e.native.target.style.cursor = elements.length ? "pointer" : "default"; },
               plugins: {
                 legend: { position: "top", align: "end", labels: { font: { size: 12 }, padding: 12, usePointStyle: true, boxWidth: 8,
                   generateLabels: function(chart) {
