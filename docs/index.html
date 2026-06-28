@@ -434,6 +434,10 @@
         <div class="gantt-wrapper"><canvas id="chart-cost-bubble"></canvas></div>
         <div class="gantt-legend" id="cost-legend"></div>
       </div>
+      <div class="table-card" style="margin-top:18px;">
+        <h2>Project details</h2>
+        <div id="cost-grid"></div>
+      </div>
     </div>
 
     <div id="tab-benchmarking" class="tab-panel">
@@ -606,6 +610,7 @@
     const typeToSubtypes = {};  // { "Generation": Set<"Wind", "Hydro Generation", ...>, ... }
     const chartInstances = {};
     let projectsGrid = null;
+    let costGrid = null;
     let benchPeerGrid = null;
     let benchPeerGridVersion = 0;
 
@@ -1422,11 +1427,14 @@
         let costSource = "final";
         if (isNaN(cost) || cost <= 0) { cost = parseFloat(r["FID Cost (when Approved)"]); costSource = "FID"; }
         if (isNaN(cost) || cost <= 0) return null;
+        var cap = r["Capacity (MW)"] || "";
+        var len = r["Length(km)"] || "";
         return {
           name: r["Project Name"] || "",
           type: (r["Type"] || "Other").trim(),
           country: r["Country"] || "",
-          end: e, cost: cost, costSource: costSource
+          end: e, cost: cost, costSource: costSource,
+          capacity: cap, length: len
         };
       }).filter(Boolean).sort(function(a, b) { return b.end - a.end; }).slice(0, 30);
 
@@ -1453,7 +1461,8 @@
           y: i,
           r: Math.max(5, Math.min(26, 5 + (g.cost / maxCost) * 21)),
           _name: g.name, _type: g.type, _country: g.country,
-          _cost: g.cost, _costSource: g.costSource
+          _cost: g.cost, _costSource: g.costSource,
+          _capacity: g.capacity, _length: g.length
         };
       });
 
@@ -1478,8 +1487,10 @@
                   d._name,
                   d._type + (d._country ? " · " + d._country : ""),
                   (d._costSource === "final" ? "Final cost" : "FID cost") + ": $" + d._cost.toFixed(2) + "B",
-                  "Completed: " + d.x
-                ];
+                  "Completed: " + d.x,
+                  d._capacity ? "Capacity: " + d._capacity + " MW" : null,
+                  d._length   ? "Length: "   + d._length   + " km" : null
+                ].filter(function(l) { return l != null; });
               }
             }}
           },
@@ -1516,6 +1527,40 @@
       document.getElementById("cost-legend").innerHTML = types.map(function(t) {
         return '<span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:' + typeColor(t) + '"></span>' + t + '</span>';
       }).join("");
+
+      // ── Cost tab table ────────────────────────────────────────────────────
+      var tableData = items.map(function(g) {
+        return [
+          g.name,
+          g.type,
+          g.country,
+          g.end || "",
+          g.costSource === "final" ? g.cost.toFixed(2) : "",
+          g.costSource !== "final" ? g.cost.toFixed(2) : "",
+          g.capacity || "",
+          g.length   || ""
+        ];
+      });
+      var costCfg = {
+        columns: [
+          { name: "Project", width: "260px" },
+          { name: "Type",    width: "110px" },
+          { name: "Country", width: "80px" },
+          { name: "Completed", width: "80px" },
+          { name: "Final Cost ($B)", width: "110px" },
+          { name: "FID Cost ($B)",   width: "110px" },
+          { name: "Capacity (MW)",   width: "110px" },
+          { name: "Length (km)",     width: "100px" }
+        ],
+        data: tableData, sort: true, search: false,
+        pagination: { enabled: true, limit: 30 }
+      };
+      if (costGrid) {
+        costGrid.updateConfig({ data: tableData }).forceRender();
+      } else {
+        var costGridEl = document.getElementById("cost-grid");
+        if (costGridEl) costGrid = new gridjs.Grid(costCfg).render(costGridEl);
+      }
     }
 
     function renderSchedule(rows) {
