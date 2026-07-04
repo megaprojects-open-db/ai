@@ -1126,13 +1126,15 @@
         pts3.push({ x: cv, y: sv, name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "" });
       });
 
-      // Shared symmetric range so equal % values sit at equal distance on both axes
+      // Shared range (not symmetric around 0) so X and Y use identical scale steps
       // (paired with a square chart wrapper below for true same-scale display)
-      var cmpPctBound = 25;
-      pts3.forEach(function(p) {
-        cmpPctBound = Math.max(cmpPctBound, Math.abs(p.x), Math.abs(p.y));
-      });
-      cmpPctBound = Math.ceil(cmpPctBound / 25) * 25;
+      var cmpAllVals3 = [];
+      pts3.forEach(function(p) { cmpAllVals3.push(p.x, p.y); });
+      var cmpRawMin3 = cmpAllVals3.length ? Math.min.apply(null, cmpAllVals3) : -20;
+      var cmpRawMax3 = cmpAllVals3.length ? Math.max.apply(null, cmpAllVals3) : 75;
+      var cmpPad3 = Math.max(5, (cmpRawMax3 - cmpRawMin3) * 0.1);
+      var cmpMin3 = Math.floor((cmpRawMin3 - cmpPad3) / 5) * 5;
+      var cmpMax3 = Math.ceil((cmpRawMax3 + cmpPad3) / 5) * 5;
 
       var byType3 = {};
       pts3.forEach(function(p) { (byType3[p.type] = byType3[p.type] || []).push(p); });
@@ -1195,13 +1197,13 @@
               },
               scales: {
                 x: {
-                  min: -cmpPctBound, max: cmpPctBound,
+                  min: cmpMin3, max: cmpMax3,
                   title: { display: true, text: "Cost variance (%)", color: "#5b5b58", font: { size: 12 } },
                   ticks: { font: { size: 11 }, color: "#000", callback: function(v) { return (v >= 0 ? "+" : "") + v + "%"; } },
                   grid: { color: "#eee" }
                 },
                 y: {
-                  min: -cmpPctBound, max: cmpPctBound,
+                  min: cmpMin3, max: cmpMax3,
                   title: { display: true, text: "Schedule variance (%)", color: "#5b5b58", font: { size: 12 } },
                   ticks: { font: { size: 11 }, color: "#000", callback: function(v) { return (v >= 0 ? "+" : "") + v + "%"; } },
                   grid: { color: "#eee" }
