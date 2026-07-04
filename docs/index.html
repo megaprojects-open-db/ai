@@ -585,6 +585,7 @@
   <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
   <script>
     const CSV_URL = "https://raw.githubusercontent.com/megaprojects-open-db/ai/main/data/master.csv";
+    const REFRESH_DATE_URL = "https://raw.githubusercontent.com/megaprojects-open-db/ai/main/data/last_updated.txt";
 
     // Tab switching
     function switchTab(tabName) {
@@ -609,7 +610,7 @@
     });
 
     // Global state
-    const DATA_REFRESH_DATE = "22 Jun 2026";  // fallback only — auto-detected from CSV Last-Modified header
+    const DATA_REFRESH_DATE = "22 Jun 2026";  // fallback only — normally read from data/last_updated.txt
     let allRows = [];
     const filters = { Country: [], Type: [], SubType: [], YearRange: null, CostRange: null };
     let yearBounds = null;  // [min, max] of Actual ISD Year in data
@@ -671,16 +672,30 @@
 
     const overview = document.getElementById("overview-content");
 
-    fetch(CSV_URL, { cache: "no-store" })
-      .then(r => {
+    Promise.all([
+      fetch(CSV_URL, { cache: "no-store" }).then(r => {
         if (!r.ok) throw new Error("CSV fetch failed with HTTP " + r.status);
-        var lastMod = r.headers.get("Last-Modified");
+        return r.text();
+      }),
+      // Deterministic refresh date: written by hand alongside every master.csv push,
+      // rather than trusting raw.githubusercontent.com's Last-Modified header (observed
+      // to lag actual commits by days/weeks — do not revert to header-based detection).
+      fetch(REFRESH_DATE_URL, { cache: "no-store" })
+        .then(function(r) { return r.ok ? r.text() : null; })
+        .catch(function() { return null; })
+    ])
+      .then(function(results) {
+        var text = results[0];
+        var refreshRaw = results[1];
         var dataDate = DATA_REFRESH_DATE;
-        if (lastMod) {
-          var d = new Date(lastMod);
-          dataDate = d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+        if (refreshRaw) {
+          var trimmed = refreshRaw.trim();
+          var d = new Date(trimmed + "T00:00:00Z");
+          if (!isNaN(d.getTime())) {
+            dataDate = d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+          }
         }
-        return r.text().then(function(text) { return { text: text, dataDate: dataDate }; });
+        return { text: text, dataDate: dataDate };
       })
       .then(function(payload) { var text = payload.text; var dataDate = payload.dataDate;
         const parsed = Papa.parse(text, { header: true, dynamicTyping: false, skipEmptyLines: true });
