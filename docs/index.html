@@ -504,6 +504,10 @@
           <h2>Actual cost ($B) vs Actual duration (yrs)</h2>
           <div class="comparison-chart-wrap"><canvas id="chart-cmp-actual"></canvas></div>
         </div>
+        <div class="comparison-chart-card" style="grid-column: 1 / -1;">
+          <h2>Cost variance (%) vs Schedule variance (%)</h2>
+          <div class="comparison-chart-wrap"><canvas id="chart-cmp-variance-pct"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -986,6 +990,7 @@
                 cmpSelectedProject = (cmpSelectedProject === name) ? null : name;
                 if (chartInstances["chart-cmp-variance"]) chartInstances["chart-cmp-variance"].update("none");
                 if (chartInstances["chart-cmp-actual"]) chartInstances["chart-cmp-actual"].update("none");
+                if (chartInstances["chart-cmp-variance-pct"]) chartInstances["chart-cmp-variance-pct"].update("none");
               },
               onHover: function(e, elements) { if (e.native) e.native.target.style.cursor = elements.length ? "pointer" : "default"; },
               plugins: {
@@ -1070,6 +1075,7 @@
                 cmpSelectedProject = (cmpSelectedProject === name) ? null : name;
                 if (chartInstances["chart-cmp-variance"]) chartInstances["chart-cmp-variance"].update("none");
                 if (chartInstances["chart-cmp-actual"]) chartInstances["chart-cmp-actual"].update("none");
+                if (chartInstances["chart-cmp-variance-pct"]) chartInstances["chart-cmp-variance-pct"].update("none");
               },
               onHover: function(e, elements) { if (e.native) e.native.target.style.cursor = elements.length ? "pointer" : "default"; },
               plugins: {
@@ -1102,6 +1108,91 @@
                 y: {
                   title: { display: true, text: "Actual duration (yrs)", color: "#5b5b58", font: { size: 12 } },
                   ticks: { font: { size: 11 }, color: "#000" },
+                  grid: { color: "#eee" }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // ── Chart 3: Cost variance % (X) vs Schedule variance % (Y) ────────────
+      var pts3 = [];
+      rows.forEach(function(r) {
+        var cv = benchCostVar(r);
+        var sv = benchDurVar(r);
+        if (cv == null || sv == null) return;
+        pts3.push({ x: cv, y: sv, name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "" });
+      });
+
+      var byType3 = {};
+      pts3.forEach(function(p) { (byType3[p.type] = byType3[p.type] || []).push(p); });
+      var ds3 = Object.keys(byType3).sort().map(function(t) {
+        return {
+          label: t,
+          data: byType3[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
+          backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
+          borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
+          borderWidth: 1.5,
+          pointStyle: typeShape(t),
+          pointRadius: function(ctx) { return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? 10 : 5) : 7; },
+          pointHoverRadius: function(ctx) { return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? 13 : 6) : 10; },
+          pointHitRadius: 14
+        };
+      });
+
+      var wrap3 = document.getElementById("chart-cmp-variance-pct");
+      if (wrap3) {
+        if (ds3.length === 0) {
+          destroyChart("chart-cmp-variance-pct");
+          wrap3.parentElement.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Not enough data for current filters.</div>';
+        } else {
+          makeChart("chart-cmp-variance-pct", {
+            type: "scatter",
+            data: { datasets: ds3 },
+            options: {
+              maintainAspectRatio: false,
+              interaction: { mode: "nearest", intersect: false, axis: "xy" },
+              onClick: function(e, elements) {
+                if (!elements.length) return;
+                var el = elements[0];
+                var name = ds3[el.datasetIndex].data[el.index]._name;
+                cmpSelectedProject = (cmpSelectedProject === name) ? null : name;
+                if (chartInstances["chart-cmp-variance"]) chartInstances["chart-cmp-variance"].update("none");
+                if (chartInstances["chart-cmp-actual"]) chartInstances["chart-cmp-actual"].update("none");
+                if (chartInstances["chart-cmp-variance-pct"]) chartInstances["chart-cmp-variance-pct"].update("none");
+              },
+              onHover: function(e, elements) { if (e.native) e.native.target.style.cursor = elements.length ? "pointer" : "default"; },
+              plugins: {
+                legend: { position: "top", align: "end", labels: { font: { size: 12 }, padding: 12, usePointStyle: true, boxWidth: 8,
+                  generateLabels: function(chart) {
+                    return Chart.defaults.plugins.legend.labels.generateLabels(chart).map(function(lbl, i) {
+                      lbl.pointStyle = chart.data.datasets[i].pointStyle; return lbl;
+                    });
+                  }
+                }},
+                tooltip: { callbacks: {
+                  title: function() { return ""; },
+                  label: function(ctx) {
+                    var d = ctx.raw;
+                    return [
+                      d._name,
+                      d._type + (d._country ? " · " + d._country : ""),
+                      "Cost var: " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + "%",
+                      "Schedule var: " + (d.y >= 0 ? "+" : "") + d.y.toFixed(1) + "%"
+                    ];
+                  }
+                }}
+              },
+              scales: {
+                x: {
+                  title: { display: true, text: "Cost variance (%)", color: "#5b5b58", font: { size: 12 } },
+                  ticks: { font: { size: 11 }, color: "#000", callback: function(v) { return (v >= 0 ? "+" : "") + v + "%"; } },
+                  grid: { color: "#eee" }
+                },
+                y: {
+                  title: { display: true, text: "Schedule variance (%)", color: "#5b5b58", font: { size: 12 } },
+                  ticks: { font: { size: 11 }, color: "#000", callback: function(v) { return (v >= 0 ? "+" : "") + v + "%"; } },
                   grid: { color: "#eee" }
                 }
               }
