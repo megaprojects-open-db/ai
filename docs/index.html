@@ -2561,33 +2561,36 @@
       if (tableText) tableText.textContent =
         "Peer projects — " + projectType + " (" + peerTableRows.length + " total, including selected)";
 
-      const tableData = peerTableRows.map((r, idx) => {
-        const isSelected = r["Project Name"] === name;
+      // NOTE: cell values here must stay plain strings/numbers so Grid.js can sort them.
+      // Styling/links are applied via column `formatter` (see below), not baked into the
+      // data with gridjs.html() — wrapping cells in gridjs.html() at data-build time made
+      // them unsortable (Grid.js compares raw cell values, and HTML-wrapper objects have
+      // no meaningful order), which is why the Project Name / Cost Var % / Dur Var %
+      // columns previously did not respond to the sort arrows.
+      const tableData = peerTableRows.map((r) => {
         const fidCost = parseFloat(r["FID Cost (when Approved)"]);
         const finCost = parseFloat(r["Final Cost"]);
         const costPct = benchCostVar(r);
         const durPct  = benchDurVar(r);
-        const nameCell = isSelected
-          ? gridjs.html('<span style="color:var(--accent);font-weight:700;cursor:default" title="Selected project">▶ ' + (r["Project Name"] || "") + '</span>')
-          : gridjs.html('<span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick="window._benchRowClick(' + idx + ')">' + (r["Project Name"] || "") + '</span>');
-        const costCell = costPct != null
-          ? gridjs.html('<span style="color:' + (costPct > 20 ? 'var(--bad)' : costPct < 0 ? 'var(--good)' : 'var(--warn)') + ';font-weight:600">' + (costPct >= 0 ? '+' : '') + costPct.toFixed(1) + '%</span>')
-          : "";
-        const durCell = durPct != null
-          ? gridjs.html('<span style="color:' + (durPct > 20 ? 'var(--bad)' : durPct < 0 ? 'var(--good)' : 'var(--warn)') + ';font-weight:600">' + (durPct >= 0 ? '+' : '') + durPct.toFixed(1) + '%</span>')
-          : "";
         return [
-          nameCell,
+          r["Project Name"] || "",
           r["Sub Type"] || "",
           r["FID Year"] || "",
           (!isNaN(fidCost) && fidCost > 0) ? "$" + fidCost.toFixed(2) + "B" : "",
           r["FID ISD Year"] || "",
           (!isNaN(finCost) && finCost > 0) ? "$" + finCost.toFixed(2) + "B" : "",
           r["Actual ISD Year"] || "",
-          costCell,
-          durCell
+          costPct != null ? costPct.toFixed(1) : "",
+          durPct != null ? durPct.toFixed(1) : ""
         ];
       });
+
+      function benchVarPctFormatter(cell) {
+        if (cell === "" || cell == null) return "";
+        const n = parseFloat(cell);
+        if (isNaN(n)) return "";
+        return gridjs.html('<span style="color:' + (n > 20 ? 'var(--bad)' : n < 0 ? 'var(--good)' : 'var(--warn)') + ';font-weight:600">' + (n >= 0 ? '+' : '') + n.toFixed(1) + '%</span>');
+      }
 
       const _tableDataForGrid = tableData;
       const _myVersion = ++benchPeerGridVersion;
@@ -2598,15 +2601,22 @@
         if (peerGridEl) {
           benchPeerGrid = new gridjs.Grid({
             columns: [
-              { name: "Project Name", width: "260px" },
+              { name: "Project Name", width: "260px",
+                formatter: (cell) => {
+                  if (cell === name) {
+                    return gridjs.html('<span style="color:var(--accent);font-weight:700;cursor:default" title="Selected project">▶ ' + cell + '</span>');
+                  }
+                  const idx = peerTableRows.findIndex(r => r["Project Name"] === cell);
+                  return gridjs.html('<span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick="window._benchRowClick(' + idx + ')">' + cell + '</span>');
+                } },
               { name: "Sub Type",     width: "160px" },
               { name: "FID Year",     width: "80px"  },
               { name: "FID Cost",     width: "90px"  },
               { name: "FID ISD Yr",   width: "90px"  },
               { name: "Actual Cost",  width: "100px" },
               { name: "Actual ISD",   width: "90px"  },
-              { name: "Cost Var %",   width: "90px"  },
-              { name: "Dur Var %",    width: "90px"  }
+              { name: "Cost Var %",   width: "90px", formatter: benchVarPctFormatter },
+              { name: "Dur Var %",    width: "90px", formatter: benchVarPctFormatter }
             ],
             data: _tableDataForGrid,
             sort: true,
