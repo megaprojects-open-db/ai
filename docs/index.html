@@ -649,8 +649,8 @@
     }
     function unitCostLabel(type) {
       var t = (type || "").trim().toLowerCase();
-      if (t.startsWith("gen")) return "$M/MW";
-      if (t === "transmission" || t.startsWith("rail") || t.startsWith("road")) return "$M/km";
+      if (t.startsWith("gen")) return "M/MW";
+      if (t === "transmission" || t.startsWith("rail") || t.startsWith("road")) return "M/km";
       return "";
     }
     function groupCount(rows, key) {
@@ -1699,7 +1699,7 @@
               label: function(ctx) {
                 var d = ctx.raw;
                 var ucStr = (d._unitCost != null)
-                  ? "Unit cost: " + d._unitCost.toFixed(1) + (d._unitCostLabel ? " " + d._unitCostLabel : "")
+                  ? "Unit cost: $" + d._unitCost.toFixed(1) + (d._unitCostLabel ? " " + d._unitCostLabel : "")
                   : null;
                 return [
                   d._label,
@@ -1761,7 +1761,7 @@
           g.capacity || "",
           g.length   || "",
           g.unitCost != null
-            ? g.unitCost.toFixed(1) + (g.unitCostLabel ? " " + g.unitCostLabel : "")
+            ? "$" + g.unitCost.toFixed(1) + (g.unitCostLabel ? " " + g.unitCostLabel : "")
             : ""
         ];
       });
