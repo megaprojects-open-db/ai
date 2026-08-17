@@ -610,7 +610,7 @@
     });
 
     // Global state
-    const DATA_REFRESH_DATE = "22 Jun 2026";  // fallback only — normally read from data/last_updated.txt
+    const DATA_REFRESH_DATE = "Aug 16, 2026";  // authoritative — update alongside every master.csv push
     let allRows = [];
     const filters = { Country: [], Type: [], SubType: [], YearRange: null, CostRange: null };
     let yearBounds = null;  // [min, max] of Actual ISD Year in data
@@ -687,26 +687,13 @@
       fetch(CSV_URL, { cache: "no-store" }).then(r => {
         if (!r.ok) throw new Error("CSV fetch failed with HTTP " + r.status);
         return r.text();
-      }),
-      // Deterministic refresh date: written by hand alongside every master.csv push,
-      // rather than trusting raw.githubusercontent.com's Last-Modified header (observed
-      // to lag actual commits by days/weeks — do not revert to header-based detection).
-      fetch(REFRESH_DATE_URL, { cache: "no-store" })
-        .then(function(r) { return r.ok ? r.text() : null; })
-        .catch(function() { return null; })
+      })
+      // Note: data refresh date is now embedded directly in DATA_REFRESH_DATE above
+      // (avoids CDN caching lag on raw.githubusercontent.com/data/last_updated.txt)
     ])
       .then(function(results) {
         var text = results[0];
-        var refreshRaw = results[1];
-        var dataDate = DATA_REFRESH_DATE;
-        if (refreshRaw) {
-          var trimmed = refreshRaw.trim();
-          var d = new Date(trimmed + "T00:00:00Z");
-          if (!isNaN(d.getTime())) {
-            dataDate = d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-          }
-        }
-        return { text: text, dataDate: dataDate };
+        return { text: text, dataDate: DATA_REFRESH_DATE };
       })
       .then(function(payload) { var text = payload.text; var dataDate = payload.dataDate;
         const parsed = Papa.parse(text, { header: true, dynamicTyping: false, skipEmptyLines: true });
@@ -1456,6 +1443,7 @@
           year: y, cost: cost, costSource, type: t,
           name: r["Project Name"] || "",
           label: projLabel(r),
+          no: (r["No."] || "").toString().trim(),
           country: r.Country || "",
           subType: (r["Sub Type"] || "").trim(),
           company: (r["Company"] || r["Company "] || "").trim(),
@@ -2378,10 +2366,12 @@
         : d.source
           ? '<span class="no-source">Source: ' + d.source + '</span>'
           : '<span class="no-source">No source URL available for this row</span>';
+      const noField = d.no ? '<div><strong>No.:</strong> ' + d.no + '</div>' : '';
       panel.innerHTML =
         '<button class="close" aria-label="Close">×</button>' +
         '<div class="name">' + (d.label || d.name) + '</div>' +
         '<div class="detail-grid">' +
+          noField +
           '<div><strong>Type:</strong> ' + (d.type || "—") + subType + '</div>' +
           '<div><strong>Country:</strong> ' + (d.country || "—") + '</div>' +
           '<div><strong>FID cost:</strong> ' + fidCostStr + '</div>' +
@@ -2680,6 +2670,7 @@
           y: (strHash(p.name) / 1000 - 0.5) * 1.4,
           _meta: {
             name:          p.name,   // already projLabel(r) from peerData
+            no:            (r["No."]         || "").toString().trim(),
             type:          (r["Type"]        || "").trim(),
             subType:       (r["Sub Type"]    || "").trim(),
             country:       (r["Country"]     || "").trim(),
