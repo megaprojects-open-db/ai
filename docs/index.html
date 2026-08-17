@@ -642,6 +642,17 @@
       return isNaN(n) ? null : n;
     }
     function trunc(s, n) { return (s && s.length > n) ? s.slice(0, n - 1) + "..." : s; }
+    function projLabel(r) {
+      var no = (r["No."] || "").toString().trim();
+      var name = (r["Project Name"] || "").trim();
+      return no ? "No." + no + " · " + name : name;
+    }
+    function unitCostLabel(type) {
+      var t = (type || "").trim().toLowerCase();
+      if (t.startsWith("gen")) return "$M/MW";
+      if (t === "transmission" || t.startsWith("rail") || t.startsWith("road")) return "$M/km";
+      return "";
+    }
     function groupCount(rows, key) {
       const out = {};
       rows.forEach(r => {
@@ -970,7 +981,7 @@
         var cv = benchCostVar(r);
         var sv = benchSchedVar(r);
         if (cv == null || sv == null) return;
-        pts1.push({ x: cv, y: sv, name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "" });
+        pts1.push({ x: cv, y: sv, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "" });
       });
 
       var byType1 = {};
@@ -978,7 +989,7 @@
       var ds1 = Object.keys(byType1).sort().map(function(t) {
         return {
           label: t,
-          data: byType1[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
+          data: byType1[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country }; }),
           backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
           borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
@@ -1024,7 +1035,7 @@
                   label: function(ctx) {
                     var d = ctx.raw;
                     return [
-                      d._name,
+                      d._label || d._name,
                       d._type + (d._country ? " · " + d._country : ""),
                       "Cost var: " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + "%",
                       "Schedule var: " + (d.y >= 0 ? "+" : "") + d.y.toFixed(1) + " yrs"
@@ -1055,7 +1066,7 @@
         var ac = benchActualCost(r);
         var ad = benchActualDuration(r);
         if (ac == null || ad == null) return;
-        pts2.push({ x: ac, y: ad, name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "" });
+        pts2.push({ x: ac, y: ad, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "" });
       });
 
       var byType2 = {};
@@ -1063,7 +1074,7 @@
       var ds2 = Object.keys(byType2).sort().map(function(t) {
         return {
           label: t,
-          data: byType2[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
+          data: byType2[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country }; }),
           backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
           borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
@@ -1109,7 +1120,7 @@
                   label: function(ctx) {
                     var d = ctx.raw;
                     return [
-                      d._name,
+                      d._label || d._name,
                       d._type + (d._country ? " · " + d._country : ""),
                       "Actual cost: $" + d.x.toFixed(2) + "B",
                       "Actual duration: " + d.y.toFixed(1) + " yrs"
@@ -1140,7 +1151,7 @@
         var cv = benchCostVar(r);
         var sv = benchDurVar(r);
         if (cv == null || sv == null) return;
-        pts3.push({ x: cv, y: sv, name: r["Project Name"], type: r["Type"] || "Other", country: r["Country"] || "" });
+        pts3.push({ x: cv, y: sv, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "" });
       });
 
       // Shared range (not symmetric around 0) so X and Y use identical scale steps
@@ -1180,7 +1191,7 @@
       var ds3 = Object.keys(byType3).sort().map(function(t) {
         return {
           label: t,
-          data: byType3[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _type: p.type, _country: p.country }; }),
+          data: byType3[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country }; }),
           backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
           borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
@@ -1226,7 +1237,7 @@
                   label: function(ctx) {
                     var d = ctx.raw;
                     return [
-                      d._name,
+                      d._label || d._name,
                       d._type + (d._country ? " · " + d._country : ""),
                       "Cost var: " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + "%",
                       "Schedule var: " + (d.y >= 0 ? "+" : "") + d.y.toFixed(1) + "%"
@@ -1444,6 +1455,7 @@
         dots.push({
           year: y, cost: cost, costSource, type: t,
           name: r["Project Name"] || "",
+          label: projLabel(r),
           country: r.Country || "",
           subType: (r["Sub Type"] || "").trim(),
           company: (r["Company"] || r["Company "] || "").trim(),
@@ -1512,7 +1524,7 @@
                   const fidStr = d.fidCost != null ? "$" + d.fidCost.toFixed(2) + "B" : "—";
                   const finStr = d.finalCost != null ? "$" + d.finalCost.toFixed(2) + "B" : "—";
                   return [
-                    d.name,
+                    d.label || d.name,
                     d.type + (d.country ? " · " + d.country : ""),
                     "FID cost: " + fidStr + "   Final: " + finStr,
                     "Planned ISD: " + (d.fidIsdYear || "—") + "   Actual: " + (d.actualIsdYear || "—")
@@ -1555,7 +1567,7 @@
         const fin = num(r["Final Cost"]);
         const pct = (fid && fin && fid > 0) ? ((fin - fid) / fid * 100) : null;
         return [
-          r["Project Name"] || "", r["Type"] || "", r["Sub Type"] || "",
+          projLabel(r), r["Type"] || "", r["Sub Type"] || "",
           r["Country"] || "", r["Actual ISD Year"] || "",
           fid != null ? fid.toFixed(2) : "", fin != null ? fin.toFixed(2) : "",
           pct != null ? pct.toFixed(1) : "", r["Source"] || ""
@@ -1602,12 +1614,17 @@
         if (isNaN(cost) || cost <= 0) return null;
         var cap = r["Capacity (MW)"] || "";
         var len = r["Length(km)"] || "";
+        var uc = parseFloat(r["Unit Cost"]);
+        var typeTrim = (r["Type"] || "Other").trim();
         return {
           name: r["Project Name"] || "",
-          type: (r["Type"] || "Other").trim(),
+          label: projLabel(r),
+          type: typeTrim,
           country: r["Country"] || "",
           end: e, cost: cost, costSource: costSource,
-          capacity: cap, length: len
+          capacity: cap, length: len,
+          unitCost: (!isNaN(uc) && uc > 0) ? uc : null,
+          unitCostLabel: unitCostLabel(typeTrim)
         };
       }).filter(Boolean).sort(function(a, b) { return b.end - a.end; }).slice(0, 30);
 
@@ -1633,9 +1650,10 @@
           x: g.end,
           y: i,
           r: Math.max(5, Math.min(26, 5 + (g.cost / maxCost) * 21)),
-          _name: g.name, _type: g.type, _country: g.country,
+          _name: g.name, _label: g.label, _type: g.type, _country: g.country,
           _cost: g.cost, _costSource: g.costSource,
-          _capacity: g.capacity, _length: g.length
+          _capacity: g.capacity, _length: g.length,
+          _unitCost: g.unitCost, _unitCostLabel: g.unitCostLabel
         };
       });
 
@@ -1680,10 +1698,14 @@
               title: function() { return ""; },
               label: function(ctx) {
                 var d = ctx.raw;
+                var ucStr = (d._unitCost != null)
+                  ? "Unit cost: " + d._unitCost.toFixed(1) + (d._unitCostLabel ? " " + d._unitCostLabel : "")
+                  : null;
                 return [
-                  d._name,
+                  d._label,
                   d._type + (d._country ? " · " + d._country : ""),
                   (d._costSource === "final" ? "Final cost" : "FID cost") + ": $" + d._cost.toFixed(2) + "B",
+                  ucStr,
                   "Completed: " + d.x,
                   d._capacity ? "Capacity: " + d._capacity + " MW" : null,
                   d._length   ? "Length: "   + d._length   + " km" : null
@@ -1711,7 +1733,7 @@
                 font: { size: 11 },
                 callback: function(val) {
                   var idx = Math.round(val);
-                  return (idx >= 0 && idx < items.length) ? trunc(items[idx].name, 40) : "";
+                  return (idx >= 0 && idx < items.length) ? trunc(items[idx].label, 40) : "";
                 }
               },
               grid: { display: false }
@@ -1730,14 +1752,17 @@
       // ── Cost tab table ────────────────────────────────────────────────────
       var tableData = items.map(function(g) {
         return [
-          g.name,
+          g.label,
           g.type,
           g.country,
           g.end || "",
           g.costSource === "final" ? g.cost.toFixed(2) : "",
           g.costSource !== "final" ? g.cost.toFixed(2) : "",
           g.capacity || "",
-          g.length   || ""
+          g.length   || "",
+          g.unitCost != null
+            ? g.unitCost.toFixed(1) + (g.unitCostLabel ? " " + g.unitCostLabel : "")
+            : ""
         ];
       });
       var costCfg = {
@@ -1749,17 +1774,16 @@
           { name: "Final Cost ($B)", width: "110px" },
           { name: "FID Cost ($B)",   width: "110px" },
           { name: "Capacity (MW)",   width: "110px" },
-          { name: "Length (km)",     width: "100px" }
+          { name: "Length (km)",     width: "100px" },
+          { name: "Unit Cost",       width: "110px" }
         ],
         data: tableData, sort: true, search: false,
         pagination: { enabled: true, limit: 30 }
       };
-      if (costGrid) {
-        costGrid.updateConfig({ data: tableData }).forceRender();
-      } else {
-        var costGridEl = document.getElementById("cost-grid");
-        if (costGridEl) costGrid = new gridjs.Grid(costCfg).render(costGridEl);
-      }
+      // Always destroy and recreate so the Unit Cost column is included
+      var costGridEl = document.getElementById("cost-grid");
+      if (costGrid) { try { costGrid.destroy(); } catch(e) {} costGrid = null; }
+      if (costGridEl) costGrid = new gridjs.Grid(costCfg).render(costGridEl);
     }
 
     function renderSchedule(rows) {
@@ -1772,7 +1796,8 @@
         const costStr = costVal != null ? "  $" + costVal.toFixed(1) + "B" : "";
         const country = (r["Country"] || "").trim();
         const prefix = country ? country + " · " : "";
-        return { name: r["Project Name"], type: r["Type"] || "Other", country, start: s, end: e, dur: e - s, costVal, costStr, prefix };
+        const no = (r["No."] || "").toString().trim();
+        return { name: r["Project Name"], no, type: r["Type"] || "Other", country, start: s, end: e, dur: e - s, costVal, costStr, prefix };
       }).filter(Boolean);
       if (scheduleSort === "cost") {
         ganttAll.sort((a, b) => (b.costVal || 0) - (a.costVal || 0));
@@ -1830,7 +1855,7 @@
             ctx.restore();
           }
         }],
-        data: { labels: gantt.map(g => trunc(g.prefix + g.name, 42) + g.costStr),
+        data: { labels: gantt.map(g => trunc(g.prefix + (g.no ? "No." + g.no + " · " : "") + g.name, 42) + g.costStr),
                 datasets: [{ label: "Construction span", data: gantt.map(g => [g.start, g.end]),
                   backgroundColor: colors, borderColor: colors, borderWidth: 0,
                   borderRadius: 3, barPercentage: 0.78 }] },
@@ -2355,7 +2380,7 @@
           : '<span class="no-source">No source URL available for this row</span>';
       panel.innerHTML =
         '<button class="close" aria-label="Close">×</button>' +
-        '<div class="name">' + d.name + '</div>' +
+        '<div class="name">' + (d.label || d.name) + '</div>' +
         '<div class="detail-grid">' +
           '<div><strong>Type:</strong> ' + (d.type || "—") + subType + '</div>' +
           '<div><strong>Country:</strong> ' + (d.country || "—") + '</div>' +
@@ -2409,6 +2434,7 @@
       const project = allRows.find(r => r["Project Name"] === name);
       if (!project) { content.innerHTML = '<div class="details-empty">Project not found.</div>'; return; }
 
+      const projDisplay = projLabel(project);  // "No.XX · Project Name" for display
       const groupField  = benchGroupBy === "SubType" ? "Sub Type" : "Type";
       const groupLabel  = benchGroupBy === "SubType" ? "Sub Type" : "Type";
       const projectType = (project[groupField] || "").trim();  // value in the chosen field
@@ -2428,10 +2454,10 @@
       const projActualCost = benchActualCost(project);
       const projActualDur  = benchActualDuration(project);
 
-      const peerCostData       = peers.map(r => ({ name: r["Project Name"], value: benchCostVar(r),         row: r })).filter(p => p.value !== null);
-      const peerSchedData      = peers.map(r => ({ name: r["Project Name"], value: benchSchedVar(r),        row: r })).filter(p => p.value !== null);
-      const peerActualCostData = peers.map(r => ({ name: r["Project Name"], value: benchActualCost(r),      row: r })).filter(p => p.value !== null);
-      const peerActualDurData  = peers.map(r => ({ name: r["Project Name"], value: benchActualDuration(r),  row: r })).filter(p => p.value !== null);
+      const peerCostData       = peers.map(r => ({ name: projLabel(r), value: benchCostVar(r),         row: r })).filter(p => p.value !== null);
+      const peerSchedData      = peers.map(r => ({ name: projLabel(r), value: benchSchedVar(r),        row: r })).filter(p => p.value !== null);
+      const peerActualCostData = peers.map(r => ({ name: projLabel(r), value: benchActualCost(r),      row: r })).filter(p => p.value !== null);
+      const peerActualDurData  = peers.map(r => ({ name: projLabel(r), value: benchActualDuration(r),  row: r })).filter(p => p.value !== null);
 
       const costStats       = benchQuartiles(peerCostData.map(p => p.value));
       const schedStats      = benchQuartiles(peerSchedData.map(p => p.value));
@@ -2459,7 +2485,7 @@
         '<div class="bench-summary">' +
           '<div class="bench-summary-item">' +
             '<div class="bench-summary-label">Project</div>' +
-            '<div class="bench-summary-value" style="font-size:14px;line-height:1.35">' + name + '</div>' +
+            '<div class="bench-summary-value" style="font-size:14px;line-height:1.35">' + projDisplay + '</div>' +
           '</div>' +
           '<div class="bench-summary-item">' +
             '<div class="bench-summary-label">Peer group (' + groupLabel + ')</div>' +
@@ -2483,12 +2509,12 @@
             // HTML legend row
             '<div class="bench-chart-legend">' +
               '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
-              (projCostVar !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + costVarStr + '</span>' : '') +
+              (projCostVar !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + projDisplay + ': ' + costVarStr + '</span>' : '') +
             '</div>' +
             // Stat row
             benchStatRowHtml(costStats, "%") +
             // Optional no-data notice
-            (projCostVar === null ? '<div class="bench-no-data-notice">⚠ No Final Cost data recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            (projCostVar === null ? '<div class="bench-no-data-notice">⚠ No Final Cost data recorded for <strong>' + projDisplay + '</strong> — peer distribution shown without project marker.</div>' : '') +
             '<canvas id="bench-chart-cost"></canvas>' +
             '<div class="chart-detail" id="bench-detail-cost"></div>' +
             '<div class="bench-chart-note">Cost variance = (Final Cost − FID Cost) ÷ FID Cost × 100. ' +
@@ -2498,10 +2524,10 @@
             '<h2>Schedule Variance vs ' + projectType + ' ' + groupLabel + ' Peers</h2>' +
             '<div class="bench-chart-legend">' +
               '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
-              (projSchedVar !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + schedVarStr + '</span>' : '') +
+              (projSchedVar !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + projDisplay + ': ' + schedVarStr + '</span>' : '') +
             '</div>' +
             benchStatRowHtml(schedStats, " yrs") +
-            (projSchedVar === null ? '<div class="bench-no-data-notice">⚠ No planned/actual in-service date recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            (projSchedVar === null ? '<div class="bench-no-data-notice">⚠ No planned/actual in-service date recorded for <strong>' + projDisplay + '</strong> — peer distribution shown without project marker.</div>' : '') +
             '<canvas id="bench-chart-sched"></canvas>' +
             '<div class="chart-detail" id="bench-detail-sched"></div>' +
             '<div class="bench-chart-note">Schedule variance = Actual ISD Year − Planned ISD Year (years). ' +
@@ -2513,10 +2539,10 @@
             '<h2>Actual Cost vs ' + projectType + ' ' + groupLabel + ' Peers</h2>' +
             '<div class="bench-chart-legend">' +
               '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
-              (projActualCost !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + actualCostStr + '</span>' : '') +
+              (projActualCost !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + projDisplay + ': ' + actualCostStr + '</span>' : '') +
             '</div>' +
             benchStatRowAbsHtml(actualCostStats, "B", 2) +
-            (projActualCost === null ? '<div class="bench-no-data-notice">⚠ No Final Cost data recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            (projActualCost === null ? '<div class="bench-no-data-notice">⚠ No Final Cost data recorded for <strong>' + projDisplay + '</strong> — peer distribution shown without project marker.</div>' : '') +
             '<canvas id="bench-chart-actual-cost"></canvas>' +
             '<div class="chart-detail" id="bench-detail-actual-cost"></div>' +
             '<div class="bench-chart-note">Actual cost = Final Cost ($B). Where Final Cost is unavailable, FID Cost is used as a proxy. ' +
@@ -2526,10 +2552,10 @@
             '<h2>Actual Duration vs ' + projectType + ' ' + groupLabel + ' Peers</h2>' +
             '<div class="bench-chart-legend">' +
               '<span class="bench-legend-item"><span class="bench-legend-dot"></span> Peer projects</span>' +
-              (projActualDur !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + name + ': ' + actualDurStr + '</span>' : '') +
+              (projActualDur !== null ? '<span class="bench-legend-item selected"><span class="bench-legend-tri"></span> ' + projDisplay + ': ' + actualDurStr + '</span>' : '') +
             '</div>' +
             benchStatRowAbsHtml(actualDurStats, " yrs", 1) +
-            (projActualDur === null ? '<div class="bench-no-data-notice">⚠ No duration data recorded for <strong>' + name + '</strong> — peer distribution shown without project marker.</div>' : '') +
+            (projActualDur === null ? '<div class="bench-no-data-notice">⚠ No duration data recorded for <strong>' + projDisplay + '</strong> — peer distribution shown without project marker.</div>' : '') +
             '<canvas id="bench-chart-actual-dur"></canvas>' +
             '<div class="chart-detail" id="bench-detail-actual-dur"></div>' +
             '<div class="bench-chart-note">Actual duration = Actual ISD Year − FID Year (years from investment decision to completion). ' +
@@ -2546,10 +2572,10 @@
 
       // Give the DOM a tick to render the canvases, then draw
       setTimeout(() => {
-        renderBenchChart("bench-chart-cost",        costStats,       projCostVar,    peerCostData,       name, "Cost Variance (%)",       "%",    "bench-detail-cost");
-        renderBenchChart("bench-chart-sched",       schedStats,      projSchedVar,   peerSchedData,      name, "Schedule Variance (yrs)", " yrs", "bench-detail-sched");
-        renderBenchChart("bench-chart-actual-cost", actualCostStats, projActualCost, peerActualCostData, name, "Actual Cost ($B)",        "B",    "bench-detail-actual-cost", { isAbsolute: true, decimals: 2 });
-        renderBenchChart("bench-chart-actual-dur",  actualDurStats,  projActualDur,  peerActualDurData,  name, "Duration (yrs)",          " yrs", "bench-detail-actual-dur",  { isAbsolute: true, decimals: 1 });
+        renderBenchChart("bench-chart-cost",        costStats,       projCostVar,    peerCostData,       projDisplay, "Cost Variance (%)",       "%",    "bench-detail-cost");
+        renderBenchChart("bench-chart-sched",       schedStats,      projSchedVar,   peerSchedData,      projDisplay, "Schedule Variance (yrs)", " yrs", "bench-detail-sched");
+        renderBenchChart("bench-chart-actual-cost", actualCostStats, projActualCost, peerActualCostData, projDisplay, "Actual Cost ($B)",        "B",    "bench-detail-actual-cost", { isAbsolute: true, decimals: 2 });
+        renderBenchChart("bench-chart-actual-dur",  actualDurStats,  projActualDur,  peerActualDurData,  projDisplay, "Duration (yrs)",          " yrs", "bench-detail-actual-dur",  { isAbsolute: true, decimals: 1 });
       }, 10);
 
       // ── Peer project table ──────────────────────────────────────────────────────
@@ -2603,11 +2629,13 @@
             columns: [
               { name: "Project Name", width: "260px",
                 formatter: (cell) => {
+                  const prow = peerTableRows.find(r => r["Project Name"] === cell);
+                  const display = prow ? projLabel(prow) : cell;
                   if (cell === name) {
-                    return gridjs.html('<span style="color:var(--accent);font-weight:700;cursor:default" title="Selected project">▶ ' + cell + '</span>');
+                    return gridjs.html('<span style="color:var(--accent);font-weight:700;cursor:default" title="Selected project">▶ ' + display + '</span>');
                   }
                   const idx = peerTableRows.findIndex(r => r["Project Name"] === cell);
-                  return gridjs.html('<span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick="window._benchRowClick(' + idx + ')">' + cell + '</span>');
+                  return gridjs.html('<span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick="window._benchRowClick(' + idx + ')">' + display + '</span>');
                 } },
               { name: "Sub Type",     width: "160px" },
               { name: "FID Year",     width: "80px"  },
@@ -2651,7 +2679,7 @@
           x: p.value,
           y: (strHash(p.name) / 1000 - 0.5) * 1.4,
           _meta: {
-            name:          p.name,
+            name:          p.name,   // already projLabel(r) from peerData
             type:          (r["Type"]        || "").trim(),
             subType:       (r["Sub Type"]    || "").trim(),
             country:       (r["Country"]     || "").trim(),
