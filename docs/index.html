@@ -1807,10 +1807,19 @@
         data: tableData, sort: true, search: false,
         pagination: { enabled: true, limit: 30 }
       };
-      // Always destroy and recreate so the Unit Cost column is included
+      // Always destroy and recreate so the Unit Cost column is included.
+      // Grid.js destroy() does NOT clear the container or Preact's vdom state on
+      // it, so re-rendering into the same node (even after innerHTML = "") is
+      // refused/reverted and the table silently keeps the previous, unfiltered
+      // rows. Swap in a brand-new container node so each render starts clean.
       var costGridEl = document.getElementById("cost-grid");
       if (costGrid) { try { costGrid.destroy(); } catch(e) {} costGrid = null; }
-      if (costGridEl) costGrid = new gridjs.Grid(costCfg).render(costGridEl);
+      if (costGridEl && costGridEl.parentNode) {
+        var freshCostEl = document.createElement("div");
+        freshCostEl.id = "cost-grid";
+        costGridEl.parentNode.replaceChild(freshCostEl, costGridEl);
+        costGrid = new gridjs.Grid(costCfg).render(freshCostEl);
+      }
     }
 
     function renderSchedule(rows) {
