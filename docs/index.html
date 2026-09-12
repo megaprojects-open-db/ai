@@ -1019,7 +1019,7 @@
         var cv = benchCostVar(r);
         var sv = benchSchedVar(r);
         if (cv == null || sv == null) return;
-        pts1.push({ x: cv, y: sv, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "" });
+        pts1.push({ x: cv, y: sv, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "", meta: cmpMeta(r) });
       });
 
       var byType1 = {};
@@ -1027,7 +1027,7 @@
       var ds1 = Object.keys(byType1).sort().map(function(t) {
         return {
           label: t,
-          data: byType1[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country }; }),
+          data: byType1[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country, _meta: p.meta }; }),
           backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
           borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
@@ -1072,12 +1072,10 @@
                   title: function() { return ""; },
                   label: function(ctx) {
                     var d = ctx.raw;
-                    return [
-                      d._label || d._name,
-                      d._type + (d._country ? " · " + d._country : ""),
+                    return cmpTooltipLines(d, [
                       "Cost var: " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + "%",
                       "Schedule var: " + (d.y >= 0 ? "+" : "") + d.y.toFixed(1) + " yrs"
-                    ];
+                    ]);
                   }
                 }}
               },
@@ -1104,7 +1102,7 @@
         var ac = benchActualCost(r);
         var ad = benchActualDuration(r);
         if (ac == null || ad == null) return;
-        pts2.push({ x: ac, y: ad, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "" });
+        pts2.push({ x: ac, y: ad, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "", meta: cmpMeta(r) });
       });
 
       var byType2 = {};
@@ -1112,7 +1110,7 @@
       var ds2 = Object.keys(byType2).sort().map(function(t) {
         return {
           label: t,
-          data: byType2[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country }; }),
+          data: byType2[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country, _meta: p.meta }; }),
           backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
           borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
@@ -1157,12 +1155,8 @@
                   title: function() { return ""; },
                   label: function(ctx) {
                     var d = ctx.raw;
-                    return [
-                      d._label || d._name,
-                      d._type + (d._country ? " · " + d._country : ""),
-                      "Actual cost: $" + d.x.toFixed(2) + "B",
-                      "Actual duration: " + d.y.toFixed(1) + " yrs"
-                    ];
+                    // Both axis values already appear in the shared block above.
+                    return cmpTooltipLines(d, []);
                   }
                 }}
               },
@@ -1189,7 +1183,7 @@
         var cv = benchCostVar(r);
         var sv = benchDurVar(r);
         if (cv == null || sv == null) return;
-        pts3.push({ x: cv, y: sv, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "" });
+        pts3.push({ x: cv, y: sv, name: r["Project Name"], label: projLabel(r), type: r["Type"] || "Other", country: r["Country"] || "", meta: cmpMeta(r) });
       });
 
       // Shared range (not symmetric around 0) so X and Y use identical scale steps
@@ -1229,7 +1223,7 @@
       var ds3 = Object.keys(byType3).sort().map(function(t) {
         return {
           label: t,
-          data: byType3[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country }; }),
+          data: byType3[t].map(function(p) { return { x: p.x, y: p.y, _name: p.name, _label: p.label, _type: p.type, _country: p.country, _meta: p.meta }; }),
           backgroundColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c + "ee" : "rgba(180,180,180,0.2)") : c + "cc"; },
           borderColor: function(ctx) { var c = typeColor(t); return cmpSelectedProject ? (ctx.raw && ctx.raw._name === cmpSelectedProject ? c : "rgba(150,150,150,0.35)") : c; },
           borderWidth: 1.5,
@@ -1274,12 +1268,10 @@
                   title: function() { return ""; },
                   label: function(ctx) {
                     var d = ctx.raw;
-                    return [
-                      d._label || d._name,
-                      d._type + (d._country ? " · " + d._country : ""),
+                    return cmpTooltipLines(d, [
                       "Cost var: " + (d.x >= 0 ? "+" : "") + d.x.toFixed(1) + "%",
                       "Schedule var: " + (d.y >= 0 ? "+" : "") + d.y.toFixed(1) + "%"
-                    ];
+                    ]);
                   }
                 }}
               },
@@ -2306,6 +2298,50 @@
       const fidY = parseInt(r["FID Year"]);
       if (!isNaN(actY) && actY > 1900 && !isNaN(fidY) && fidY > 1900 && actY >= fidY) return actY - fidY;
       return null;
+    }
+
+    // Shared tooltip payload for the Comparison tab. Implementation duration and
+    // the start-finish span are computed exactly as the Cost tab table does
+    // (FID Year -> Actual ISD Year) so the two views can never disagree.
+    function cmpMeta(r) {
+      var fc = num(r["FID Cost (when Approved)"]);
+      var ac = num(r["Final Cost"]);
+      var fy = parseInt(r["FID Year"]);
+      var ay = parseInt(r["Actual ISD Year"]);
+      var fi = parseInt(r["FID ISD Year"]);
+      var fidYear = (!isNaN(fy) && fy > 1900) ? fy : null;
+      var actYear = (!isNaN(ay) && ay > 1900) ? ay : null;
+      var implDur = null;
+      if (fidYear != null) {
+        var idur = parseFloat(r["Implementation Duration"]);
+        implDur = (!isNaN(idur) && idur > 0) ? idur
+                : (actYear != null ? actYear - fidYear : null);
+        if (implDur != null && implDur <= 0) implDur = null;
+      }
+      return {
+        fidCost: (fc != null && fc > 0) ? fc : null,
+        actCost: (ac != null && ac > 0) ? ac : null,
+        implDur: implDur,
+        fidYear: fidYear,
+        actYear: actYear,
+        fidIsdYear: (!isNaN(fi) && fi > 1900) ? fi : null
+      };
+    }
+
+    // Common tooltip block for all three Comparison charts; `extra` holds the
+    // chart-specific axis readouts appended underneath.
+    function cmpTooltipLines(d, extra) {
+      var m = d._meta || {};
+      var out = [
+        d._label || d._name,
+        d._type + (d._country ? " \u00b7 " + d._country : ""),
+        "FID cost: " + (m.fidCost != null ? "$" + m.fidCost.toFixed(2) + "B" : "n/a"),
+        "Actual cost: " + (m.actCost != null ? "$" + m.actCost.toFixed(2) + "B" : "n/a"),
+        "Impl. duration: " + (m.implDur != null ? m.implDur + " yrs" : "n/a"),
+        "Start - Finish: " + ((m.fidYear != null && m.actYear != null) ? (m.fidYear + " - " + m.actYear) : "n/a"),
+        "FID completion yr: " + (m.fidIsdYear != null ? m.fidIsdYear : "n/a")
+      ];
+      return out.concat(extra || []);
     }
 
     function benchDurVar(r) {
