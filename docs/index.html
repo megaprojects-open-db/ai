@@ -1643,6 +1643,17 @@
         var len = r["Length(km)"] || "";
         var uc = parseFloat(r["Unit Cost"]);
         var typeTrim = (r["Type"] || "Other").trim();
+        // FID year drives both the implementation-duration and start-finish columns.
+        // Rows with no FID year carry a placeholder 0 in "Implementation Duration";
+        // treat those as blank rather than printing a misleading "0".
+        var fy = parseInt(r["FID Year"]);
+        var fidYear = (!isNaN(fy) && fy > 0) ? fy : null;
+        var idur = parseFloat(r["Implementation Duration"]);
+        var implDur = null;
+        if (fidYear != null) {
+          implDur = (!isNaN(idur) && idur > 0) ? idur : (e - fidYear);
+          if (implDur <= 0) implDur = null;
+        }
         return {
           name: r["Project Name"] || "",
           label: projLabel(r),
@@ -1650,6 +1661,7 @@
           country: r["Country"] || "",
           end: e, cost: cost, costSource: costSource,
           capacity: cap, length: len,
+          fidYear: fidYear, implDur: implDur,
           unitCost: (!isNaN(uc) && uc > 0) ? uc : null,
           unitCostLabel: unitCostLabel(typeTrim)
         };
@@ -1784,7 +1796,8 @@
           g.country,
           g.end || "",
           g.costSource === "final" ? g.cost.toFixed(2) : "",
-          g.costSource !== "final" ? g.cost.toFixed(2) : "",
+          g.implDur != null ? g.implDur : "",
+          (g.fidYear != null && g.end) ? (g.fidYear + " - " + g.end) : "",
           g.capacity || "",
           g.length   || "",
           g.unitCost != null
@@ -1799,7 +1812,8 @@
           { name: "Country", width: "80px" },
           { name: "Completed", width: "80px" },
           { name: "Final Cost ($B)", width: "110px" },
-          { name: "FID Cost ($B)",   width: "110px" },
+          { name: "Implementation Duration (yrs)", width: "140px" },
+          { name: "Start - Finish",  width: "110px" },
           { name: "Capacity (MW)",   width: "110px" },
           { name: "Length (km)",     width: "100px" },
           { name: "Unit Cost",       width: "110px" }
