@@ -1810,11 +1810,11 @@
           g.costSource === "final" ? g.cost.toFixed(2) : "",
           g.implDur != null ? g.implDur : "",
           (g.fidYear != null && g.end) ? (g.fidYear + " - " + g.end) : "",
-          g.capacity || "",
           g.length   || "",
           g.unitCost != null
             ? "$" + g.unitCost.toFixed(1) + (g.unitCostLabel ? " " + g.unitCostLabel : "")
-            : ""
+            : "",
+          g.capacity || ""
         ];
       });
       var costCfg = {
@@ -1824,11 +1824,11 @@
           { name: "Country", width: "80px" },
           { name: "Completed", width: "80px" },
           { name: "Final Cost ($B)", width: "110px" },
-          { name: "Implementation Duration (yrs)", width: "110px" },
+          { name: "Impl. Duration (yrs)", width: "110px" },
           { name: "Start - Finish",  width: "110px" },
-          { name: "Capacity (MW)",   width: "110px" },
           { name: "Length (km)",     width: "100px" },
-          { name: "Unit Cost",       width: "110px" }
+          { name: "Unit Cost",       width: "110px" },
+          { name: "Capacity (MW)",   width: "110px" }
         ],
         data: tableData, sort: true, search: false,
         pagination: { enabled: true, limit: 30 }
