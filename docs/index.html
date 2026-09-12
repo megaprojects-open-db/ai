@@ -762,11 +762,13 @@
           + "  ·  " + allRows.length + " projects";
 
         populateFilters(allRows);
+        // URL params: ?project=Name&tab=details&type=...&subtype=...&country=...
+        //             &year=2015-2024&cost=1-10
+        const urlParams = new URLSearchParams(window.location.search);
+        applyUrlFilters(urlParams);
         applyFilters();
         initDetails();
         initBenchmarking();
-        // Handle URL params: ?project=Name&tab=details
-        const urlParams = new URLSearchParams(window.location.search);
         const urlProject = urlParams.get("project");
         const urlTab = urlParams.get("tab");
         if (urlTab) switchTab(urlTab);
@@ -947,6 +949,86 @@
         if (costBounds) document.getElementById("slider-cost").noUiSlider.set(costBounds);
         applyFilters();
       });
+    }
+
+    // ── Filters from URL query params ────────────────────────────────────────
+    // Lets a link open the dashboard pre-filtered without changing what the
+    // plain URL shows. Shape:
+    //   ?type=Transmission&subtype=Transmission%20Line
+    //   ?type=Transmission,Generation&country=Canada&year=2015-2024&cost=1-10
+    // Multiple values are comma-separated. Matching is case-insensitive and is
+    // done against the values actually present in the data, so a stale or
+    // mistyped link simply leaves that filter unset instead of rendering an
+    // empty dashboard. "Clear all" resets everything as usual.
+    function applyUrlFilters(params) {
+      if (!params) return false;
+      var applied = false;
+
+      function pickList(paramName, filterKey, validValues) {
+        var raw = params.get(paramName);
+        if (!raw) return;
+        var matched = [];
+        raw.split(",").forEach(function(part) {
+          var want = part.trim().toLowerCase();
+          if (!want) return;
+          for (var i = 0; i < validValues.length; i++) {
+            if (validValues[i].toLowerCase() === want) {
+              if (matched.indexOf(validValues[i]) < 0) matched.push(validValues[i]);
+              return;
+            }
+          }
+          console.warn('Ignoring unknown "' + paramName + '" value in URL: ' + part.trim());
+        });
+        if (matched.length) { filters[filterKey] = matched; applied = true; }
+      }
+
+      function uniq(field) {
+        var out = [];
+        allRows.forEach(function(r) {
+          var v = (r[field] || "").trim();
+          if (v && out.indexOf(v) < 0) out.push(v);
+        });
+        return out;
+      }
+
+      pickList("country", "Country", uniq("Country"));
+      pickList("type",    "Type",    uniq("Type"));
+
+      // Sub Type options depend on the selected Type(s), so narrow them first.
+      refreshSubtypeOptions();
+      var subOpts = [];
+      document.querySelectorAll("#ms-panel-subtype .ms-option").forEach(function(o) {
+        if (o.dataset.value) subOpts.push(o.dataset.value);
+      });
+      pickList("subtype", "SubType", subOpts);
+
+      function pickRange(paramName, filterKey, bounds, sliderId, parse) {
+        var raw = params.get(paramName);
+        if (!raw || !bounds) return;
+        var m = raw.split("-");
+        if (m.length !== 2) { console.warn('Ignoring malformed "' + paramName + '" in URL: ' + raw); return; }
+        var lo = parse(m[0]), hi = parse(m[1]);
+        if (isNaN(lo) || isNaN(hi) || lo > hi) { console.warn('Ignoring malformed "' + paramName + '" in URL: ' + raw); return; }
+        lo = Math.max(lo, bounds[0]); hi = Math.min(hi, bounds[1]);
+        if (lo > hi) return;
+        if (lo === bounds[0] && hi === bounds[1]) return;   // full range = no filter
+        filters[filterKey] = [lo, hi];
+        applied = true;
+        var el = document.getElementById(sliderId);
+        if (el && el.noUiSlider) el.noUiSlider.set([lo, hi]);
+      }
+      pickRange("year", "YearRange", yearBounds, "slider-year", function(v) { return parseInt(v, 10); });
+      pickRange("cost", "CostRange", costBounds, "slider-cost", function(v) { return parseFloat(v); });
+
+      if (applied) {
+        updateMsBtn(document.getElementById("ms-btn-country"), filters.Country, "All countries");
+        updateMsBtn(document.getElementById("ms-btn-type"),    filters.Type,    "All types");
+        updateMsBtn(document.getElementById("ms-btn-subtype"), filters.SubType, "All sub types");
+        syncMsPanel("ms-panel-country", "Country");
+        syncMsPanel("ms-panel-type",    "Type");
+        syncMsPanel("ms-panel-subtype", "SubType");
+      }
+      return applied;
     }
 
     function refreshSubtypeOptions() {
