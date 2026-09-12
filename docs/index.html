@@ -206,6 +206,18 @@
   .error { color: var(--bad); }
   .gridjs-container { font-size: 13px; }
   .gridjs-th, .gridjs-td { padding: 8px 10px; }
+  /* Cost tab: let long headers wrap onto two lines instead of being clipped to
+     an ellipsis by the Grid.js theme (.gridjs-th is nowrap + overflow hidden),
+     so columns can stay narrow without losing the header text. */
+  #cost-grid .gridjs-th { white-space: normal; vertical-align: bottom; }
+  #cost-grid .gridjs-th .gridjs-th-content {
+    overflow: visible; text-overflow: clip; white-space: normal; line-height: 1.25;
+  }
+  /* Keep the year span on one line - "2015 - 2033" reads badly broken in two. */
+  #cost-grid .gridjs-th:nth-child(7) .gridjs-th-content,
+  #cost-grid .gridjs-tbody td:nth-child(7) { white-space: nowrap; }
+  /* Keep the project-name column readable now that header cells can shrink. */
+  #cost-grid .gridjs-th:first-child, #cost-grid .gridjs-tbody td:first-child { min-width: 230px; }
   .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; background: #f0f0f0; color: #444; }
   .pill-overrun-high { background: #fee; color: var(--bad); }
   .pill-overrun-mid { background: #fef3c7; color: var(--warn); }
@@ -1812,7 +1824,7 @@
           { name: "Country", width: "80px" },
           { name: "Completed", width: "80px" },
           { name: "Final Cost ($B)", width: "110px" },
-          { name: "Implementation Duration (yrs)", width: "140px" },
+          { name: "Implementation Duration (yrs)", width: "110px" },
           { name: "Start - Finish",  width: "110px" },
           { name: "Capacity (MW)",   width: "110px" },
           { name: "Length (km)",     width: "100px" },
